@@ -2,6 +2,12 @@
 
 A real-time collaborative coding platform that allows developers to create rooms and code together seamlessly. Built with modern web technologies for optimal performance and user experience.
 
+## 🎥 Live Demo
+Check out CollabCode in action! Watch the demo video to see how easy it is to collaborate on code in real-time:
+
+https://github.com/user-attachments/assets/4256a100-800c-4967-bde1-4c2d5e0c11a1
+
+
 ## ✨ Features
 
 - **Real-time Collaboration**: Multiple users can edit the same code simultaneously
