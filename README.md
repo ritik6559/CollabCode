@@ -118,4 +118,4 @@ If you have any questions or need help, please:
 
 ---
 
-**Built with ❤️ by the Ritik**
+**Built with ❤️ by Ritik**
