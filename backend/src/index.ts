@@ -3,8 +3,9 @@ import http from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
-import { ACTION } from './utils/actions';
+import { ACTIONS } from './utils/actions';
 import { initDB } from "./db";
 import authRoute from "./routes/auth.route";
 import roomRoute from "./routes/room.route";
@@ -27,6 +28,7 @@ app.use(cors({
     origin: "http://localhost:3000",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 }));
+app.use(cookieParser());
 
 app.use("/api/auth", authRoute);
 app.use("/api/room", roomRoute);
@@ -46,7 +48,7 @@ const handleDisconnect = (socket: any) => {
     const rooms = [...socket.rooms];
 
     rooms.forEach((roomId) => {
-        socket.to(roomId).emit(ACTION.DISCONNECTED, {
+        socket.to(roomId).emit(ACTIONS.DISCONNECTED, {
             socketId: socket.id,
             username: userSocketMap[socket.id],
         });
@@ -58,7 +60,7 @@ const handleDisconnect = (socket: any) => {
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    socket.on(ACTION.JOIN, ({ roomId, username }) => {
+    socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
         userSocketMap[socket.id] = username;
         socket.join(roomId);
 
@@ -66,7 +68,7 @@ io.on('connection', (socket) => {
         console.log( clients);
 
         clients.forEach(({ socketId }) => {
-            io.to(socketId).emit(ACTION.JOINED, {
+            io.to(socketId).emit(ACTIONS.JOINED, {
                 clients,
                 username,
                 socketId: socket.id,
@@ -74,18 +76,18 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on(ACTION.REQUEST_SYNC, ({ roomId, socketId }) => {
+    socket.on(ACTIONS.REQUEST_SYNC, ({ roomId, socketId }) => {
         const latestCode = latestCodeMap[roomId] || '';
-        io.to(socketId).emit(ACTION.SYNC_CODE, { code: latestCode });
+        io.to(socketId).emit(ACTIONS.SYNC_CODE, { code: latestCode });
     });
 
-    socket.on(ACTION.CODE_CHANGE, ({ roomId, code }) => {
+    socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
         latestCodeMap[roomId] = code;
-        socket.to(roomId).emit(ACTION.CODE_CHANGE, { code });
+        socket.to(roomId).emit(ACTIONS.CODE_CHANGE, { code });
     });
 
-    socket.on(ACTION.CURSOR_MOVE, ({ roomId, position, username }) => {
-        socket.in(roomId).emit(ACTION.CURSOR_MOVE, {
+    socket.on(ACTIONS.CURSOR_MOVE, ({ roomId, position, username }) => {
+        socket.in(roomId).emit(ACTIONS.CURSOR_MOVE, {
             socketId: socket.id,
             position,
             username
@@ -104,5 +106,5 @@ io.on('connection', (socket) => {
 
 
 server.listen(PORT, () => {
-    console.log(`🚀Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });

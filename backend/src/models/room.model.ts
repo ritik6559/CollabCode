@@ -21,10 +21,11 @@ const roomSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    members: [{
+    joinedUser: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-    }]
+        required: true
+    }
 }, {
     timestamps: true
 });

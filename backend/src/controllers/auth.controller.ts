@@ -39,7 +39,14 @@ export const register = async ( req: Request, res: Response ) => {
             password
         });
 
-        const token = generateToken(newUser._id.toString())
+        const token = generateToken(newUser._id.toString());
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: true,
+            maxAge: 24 * 60 * 60 * 1000,
+            sameSite: 'strict'
+        });
 
         res.status(201).json({
             success: true,
@@ -100,6 +107,13 @@ export const login = async ( req: Request, res: Response ) => {
 
         const token  = generateToken(user._id.toString());
 
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: true,
+            maxAge: 24 * 60 * 60 * 1000,
+            sameSite: 'strict'
+        });
+
         res.status(200).json({
             success: true,
             message: "Successfully logged in",
@@ -108,6 +122,27 @@ export const login = async ( req: Request, res: Response ) => {
         });
 
     } catch (e) {
+        res.status(500).json({
+            success: false,
+            message: e,
+            data: null
+        });
+    }
+}
+
+
+export const logout = async (req: Request, res: Response) => {
+    try{
+
+        res.clearCookie('token');
+
+        res.status(200).json({
+            success: true,
+            message: "Successfully logged out",
+            data: null
+        });
+
+    } catch(e) {
         res.status(500).json({
             success: false,
             message: e,
