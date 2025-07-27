@@ -1,4 +1,4 @@
-import {z} from "zod";
+import { z } from "zod";
 
 export const createUserSchema = z.object({
     username: z.string()
@@ -48,12 +48,10 @@ export const updateRoomSchema = z.object({
     code: z.string()
         .optional(),
 
-    members: z.object({
-        action: z.enum(["add", "remove", "set"]),
-        userIds: z.array(
-            z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format")
-        ).min(1, "At least one user ID is required")
-    }).optional()
+    joinedUser: z.string().regex(
+        /^[0-9a-fA-F]{24}$/,
+        "Invalid ObjectId format"
+    )
 }).refine(
     (data) => {
         return Object.keys(data).length > 0;

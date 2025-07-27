@@ -24,7 +24,6 @@ const roomSchema = new mongoose.Schema({
     joinedUser: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true
     }
 }, {
     timestamps: true

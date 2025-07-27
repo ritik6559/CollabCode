@@ -23,7 +23,6 @@ export const createRoom = async (req: Request, res: Response) => {
             description: description ?? "",
             language: language,
             admin: req.userId,
-            members: [req.userId]
         });
 
         res.status(201).json({
@@ -41,62 +40,75 @@ export const createRoom = async (req: Request, res: Response) => {
     }
 }
 
-export const updateRoom = async (req: Request, res: Response) => {
-    try{
-
+export const joinRoom = async (req: Request, res: Response) => {
+    try {
         const { roomId } = req.params;
+        const userId = req.userId;
 
-        const verify = updateRoomSchema.safeParse(req.body);
-
-        if (!verify.success) {
+        if (!mongoose.Types.ObjectId.isValid(roomId)) {
             res.status(400).json({
                 success: false,
-                message: verify.error.errors[0].message,
+                message: "Invalid room ID format",
                 data: null
             });
             return;
         }
 
-        const { members, ...roomUpdates } = verify.data;
-
-        if( Object.keys(roomUpdates).length > 0 ){
-            await Room.findByIdAndUpdate(roomId, roomUpdates);
+        const room = await Room.findById(roomId);
+        if (!room) {
+            res.status(404).json({
+                success: false,
+                message: "Room not found",
+                data: null
+            });
+            return;
         }
 
-        if( members ){
-            let operation;
-            const { action, userIds } = members;
-
-            switch (action) {
-                case "add":
-                    operation = { $addToSet: { members: { $each: userIds } } }
-                    break;
-
-                case "remove":
-                    operation = { $pull: { members: { $in: userIds } } }
-                    break;
-
-                case "set":
-                    operation = { $set: { members: userIds } };
-                    break;
-            }
-
-            await Room.findByIdAndUpdate(roomId, operation);
-
+        if (room.admin.toString() === userId) {
+            res.status(400).json({
+                success: false,
+                message: "Admin is already in the room",
+                data: null
+            });
+            return;
         }
 
-        const updatedRoom = await Room.findById(roomId).populate("members", "_id username email");
+        if (room.joinedUser) {
+            res.status(400).json({
+                success: false,
+                message: "Room is full. Only 2 users allowed (admin + 1 member)",
+                data: null
+            });
+            return;
+        }
+
+        if (room.admin.toString() === userId) {
+            res.status(400).json({
+                success: false,
+                message: "You cannot join your own room",
+                data: null
+            });
+            return;
+        }
+
+        const updatedRoom = await Room.findByIdAndUpdate(
+            roomId,
+            { joinedUser: userId },
+            { new: true }
+        ).populate("admin", "_id username email")
+         .populate("joinedUser", "_id username email");
 
         res.status(200).json({
             success: true,
-            message: "Room updated successfully",
+            message: "Successfully joined the room",
             data: updatedRoom
         });
 
     } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
-            message: e,
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }
@@ -107,10 +119,10 @@ export const getUserRooms = async (req: Request, res: Response) => {
         const rooms = await Room.find({
             $or: [
                 { admin: req.userId },
-                { members: req.userId }
+                { joinedUser: req.userId }
             ]
         }).populate('admin', 'username email')
-            .populate('members', 'username email');
+          .populate('joinedUser', 'username email');
 
         res.status(200).json({
             success: true,
@@ -128,11 +140,10 @@ export const getUserRooms = async (req: Request, res: Response) => {
 };
 
 export const getRoomById = async (req: Request, res: Response) => {
-    try{
-
+    try {
         const { roomId } = req.params;
 
-        if( !roomId ){
+        if (!roomId) {
             res.status(400).json({
                 success: false,
                 message: `Room id is required`,
@@ -142,27 +153,26 @@ export const getRoomById = async (req: Request, res: Response) => {
         }
 
         if (!mongoose.Types.ObjectId.isValid(roomId)) {
-             res.status(400).json({
+            res.status(400).json({
                 success: false,
                 message: "Invalid room ID format",
                 data: null
-             });
-             return;
+            });
+            return;
         }
 
-        const room = await Room.findById(roomId);
+        const room = await Room.findById(roomId)
+            .populate("admin", "username email")
+            .populate("joinedUser", "username email");
 
-        if( !room ){
-            res.status(400).json({
+        if (!room) {
+            res.status(404).json({
                 success: false,
                 message: "Room not found",
                 data: null
             });
             return;
         }
-
-        await room.populate("members", "name email")
-        await room.populate("admin", "name email");
 
         res.status(200).json({
             success: true,
@@ -183,12 +193,12 @@ export const deleteRoom = async (req: Request, res: Response) => {
         const { roomId } = req.params;
 
         if (!roomId) {
-             res.status(400).json({
+            res.status(400).json({
                 success: false,
                 message: "Room ID is required",
                 data: null
-             });
-             return;
+            });
+            return;
         }
 
         if (!mongoose.Types.ObjectId.isValid(roomId)) {
@@ -203,7 +213,7 @@ export const deleteRoom = async (req: Request, res: Response) => {
         const room = await Room.findById(roomId);
 
         if (!room) {
-             res.status(404).json({
+            res.status(404).json({
                 success: false,
                 message: "Room not found",
                 data: null
@@ -212,7 +222,7 @@ export const deleteRoom = async (req: Request, res: Response) => {
         }
 
         if (req.userId !== room.admin.toString()) {
-             res.status(403).json({
+            res.status(403).json({
                 success: false,
                 message: "Only room admins can delete the room",
                 data: null
@@ -239,4 +249,3 @@ export const deleteRoom = async (req: Request, res: Response) => {
         });
     }
 };
-
