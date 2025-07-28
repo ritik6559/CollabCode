@@ -1,13 +1,14 @@
 import express from "express";
-import {validateToken} from "../middlewares/auth.middleware";
-import {createRoom, deleteRoom, getRoomById, getUserRooms, joinRoom} from "../controllers/room.controller";
+import { validateToken } from "../middlewares/auth.middleware";
+import { createRoom, deleteRoom, getRoomById, getUserRooms, joinRoom, updateRoomCode } from "../controllers/room.controller";
 
 const roomRouter = express.Router();
 
-roomRouter.post("/create-room", validateToken, createRoom);
-roomRouter.patch('/join-room/:roomId', validateToken, joinRoom);
+roomRouter.post("/", validateToken, createRoom);
+roomRouter.patch('/:roomId/join', validateToken, joinRoom);
+roomRouter.patch('/:roomId/update', validateToken, updateRoomCode);
 roomRouter.get('/:roomId', validateToken, getRoomById);
-roomRouter.get("/user/rooms", validateToken, getUserRooms);
+roomRouter.get("/rooms", validateToken, getUserRooms);
 roomRouter.delete("/:roomId", validateToken, deleteRoom);
 
 export default roomRouter;

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import {createRoomSchema, updateRoomSchema} from "../utils/schema";
-import {Room} from "../models/room.model";
+import { createRoomSchema, updateRoomSchema } from "../utils/schema";
+import { Room } from "../models/room.model";
 import mongoose from "mongoose";
 
 export const createRoom = async (req: Request, res: Response) => {
@@ -34,7 +34,7 @@ export const createRoom = async (req: Request, res: Response) => {
     } catch (e) {
         res.status(500).json({
             success: false,
-            message: e,
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }
@@ -96,7 +96,7 @@ export const joinRoom = async (req: Request, res: Response) => {
             { joinedUser: userId },
             { new: true }
         ).populate("admin", "_id username email")
-         .populate("joinedUser", "_id username email");
+            .populate("joinedUser", "_id username email");
 
         res.status(200).json({
             success: true,
@@ -114,6 +114,62 @@ export const joinRoom = async (req: Request, res: Response) => {
     }
 }
 
+export const updateRoomCode = async (req: Request, res: Response) => {
+    try {
+        const { roomId } = req.params;
+        const { code } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(roomId)) {
+            res.status(400).json({
+                success: false,
+                message: "Invalid room ID format",
+                data: null
+            });
+            return;
+        }
+
+        if (code === undefined || code === null) {
+            res.status(400).json({
+                success: false,
+                message: "Code field is required",
+                data: null
+            });
+            return;
+        }
+
+        const room = await Room.findById(roomId);
+        if (!room) {
+            res.status(404).json({
+                success: false,
+                message: "Room not found",
+                data: null
+            });
+            return;
+        }
+
+        const updatedRoom = await Room.findByIdAndUpdate(
+            roomId,
+            { code: code },
+            { new: true }
+        ).populate("admin", "_id username email")
+            .populate("joinedUser", "_id username email");
+
+        res.status(200).json({
+            success: true,
+            message: "Room code updated successfully",
+            data: updatedRoom
+        });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({
+            success: false,
+            message: e instanceof Error ? e.message : "Internal server error",
+            data: null
+        });
+    }
+};
+
 export const getUserRooms = async (req: Request, res: Response) => {
     try {
         const rooms = await Room.find({
@@ -122,7 +178,7 @@ export const getUserRooms = async (req: Request, res: Response) => {
                 { joinedUser: req.userId }
             ]
         }).populate('admin', 'username email')
-          .populate('joinedUser', 'username email');
+            .populate('joinedUser', 'username email');
 
         res.status(200).json({
             success: true,
@@ -133,7 +189,7 @@ export const getUserRooms = async (req: Request, res: Response) => {
     } catch (e) {
         res.status(500).json({
             success: false,
-            message: e,
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }
@@ -182,7 +238,7 @@ export const getRoomById = async (req: Request, res: Response) => {
     } catch (e) {
         res.status(500).json({
             success: false,
-            message: e,
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }
@@ -244,7 +300,7 @@ export const deleteRoom = async (req: Request, res: Response) => {
     } catch (e) {
         res.status(500).json({
             success: false,
-            message: e,
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }

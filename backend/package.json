@@ -13,8 +13,6 @@
   "license": "ISC",
   "packageManager": "pnpm@10.12.1",
   "dependencies": {
-    "@types/cookie-parser": "^1.4.9",
-    "@types/express": "^5.0.3",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -30,6 +28,8 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "@types/cookie-parser": "^1.4.9",
+    "@types/express": "^5.0.3"
   }
 }
