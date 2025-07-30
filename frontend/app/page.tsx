@@ -3,7 +3,6 @@
 import React from 'react'
 import Header from "@/features/landing/components/header";
 import Hero from "@/features/landing/components/hero";
-import Stats from "@/features/landing/components/stats";
 import Features from "@/features/landing/components/features";
 import Cta from "@/features/landing/components/CTA";
 
@@ -16,9 +15,6 @@ const page = () => {
 
             {/* Hero Section */}
             <Hero />
-
-            {/* Stats Section */}
-            <Stats />
 
             {/* Features Section */}
             <Features />

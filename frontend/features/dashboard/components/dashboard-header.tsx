@@ -4,19 +4,12 @@ import React from 'react';
 import {Home, LogOut} from "lucide-react";
 import JoinRoomForm from "@/features/dashboard/components/join-room-form";
 import CreateRoomForm from "@/features/dashboard/components/create-room-form";
-import {useAuth} from "@/features/auth/hooks/use-auth";
-import {createRoom} from "@/features/dashboard/api";
 
 const DashboardHeader = () => {
 
-    const {token, logout} = useAuth();
 
     const handleCreateRoom = async (roomData: { name: string; description: string; language: string }) => {
-        await createRoom(
-            roomData,
-            token!
-        )
-        window.location.reload();
+        
     };
 
     const handleJoinRoom = (roomId: string) => {
@@ -36,8 +29,8 @@ const DashboardHeader = () => {
                         <JoinRoomForm onJoinRoom={handleJoinRoom} />
                         <CreateRoomForm onCreateRoom={handleCreateRoom} />
                         <div
-                            className={"flex items-center justify-center space-x-2 cursor-pointer " + (token ? "" : "hidden")}
-                            onClick={logout}
+                            className={"flex items-center justify-center space-x-2 cursor-pointer " }
+                            onClick={() => {}}
                         >
                             <LogOut className={"h-6 w-6 text-white"}  />
                         </div>

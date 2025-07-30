@@ -10,7 +10,6 @@ import {languageColors, LANGUAGES} from "@/data";
 import {formatDate} from "@/lib/utils";
 import {toast} from "sonner";
 import {useRouter} from "next/navigation";
-import {useAuth} from "@/features/auth/hooks/use-auth";
 import {Room} from "@/features/dashboard/types";
 
 interface Props{
@@ -26,7 +25,6 @@ const RoomCard = ({
 }: Props) => {
 
     const router = useRouter();
-    const {user} = useAuth();
 
     return (
         <Card

@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import {Eye, EyeOff, Mail, Lock, Loader} from 'lucide-react';
-import {redirect} from "next/navigation";
+import {Eye, EyeOff, Mail, Lock} from 'lucide-react';
 
 const Page = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -17,16 +16,8 @@ const Page = () => {
     
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        await login({
-            email,
-            password,
-        });
+        console.log(e)
     };
-
-    if(isAuthenticated){
-        redirect("/home");
-    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center p-4">
@@ -86,9 +77,10 @@ const Page = () => {
                             <Button
                                 type="submit"
                                 className="flex w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition-all duration-200 justify-center items-center cursor-pointer"
-                                disabled={loading}
+                                disabled={false}
                             >
-                                {loading ? <Loader className={"animate-spin"} /> : 'Sign in'}
+                                {/* {loading ? <Loader className={"animate-spin"} /> : 'Sign in'} */}
+                                Sign In
                             </Button>
                         </form>
                     </CardContent>

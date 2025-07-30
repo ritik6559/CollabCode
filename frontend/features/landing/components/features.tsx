@@ -1,5 +1,5 @@
 import React from 'react';
-import {Clock, Target, Users} from "lucide-react";
+import {Clock, Target, Users, Video} from "lucide-react";
 
 const Features = () => {
     return (
@@ -13,12 +13,17 @@ const Features = () => {
                 </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 gap-8">
                 {[
                     {
                         icon: Users,
                         title: "Real-time Collaboration",
                         description: "Code together with peers in real-time, share ideas, and learn from each other in an interactive environment with live cursors and instant synchronization."
+                    },
+                    {
+                        icon: Video,
+                        title: "Integrated Video Calls",
+                        description: "Connect face-to-face with your coding partners through seamless WebRTC video calls. See and communicate with your team while working on the same codebase."
                     },
                     {
                         icon: Target,

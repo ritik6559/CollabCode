@@ -1,3 +1,5 @@
+'use client'
+
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 import { Loader2 } from "lucide-react";
 import { redirect } from "next/navigation";
