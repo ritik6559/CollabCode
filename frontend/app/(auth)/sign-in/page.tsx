@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {Eye, EyeOff, Mail, Lock, Loader} from 'lucide-react';
-import {useAuth} from "@/features/auth/hooks/use-auth";
 import {redirect} from "next/navigation";
 
 const Page = () => {
@@ -15,7 +14,7 @@ const Page = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const { login, loading, isAuthenticated } = useAuth();
+    
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

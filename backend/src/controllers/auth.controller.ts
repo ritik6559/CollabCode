@@ -1,15 +1,15 @@
 import { Request, Response } from "express";
-import {User} from "../models/user.model";
-import {createUserSchema, loginUserSchema} from "../utils/schema";
+import { User } from "../models/user.model";
+import { createUserSchema, loginUserSchema } from "../utils/schema";
 import bcrypt from "bcryptjs";
-import {generateToken} from "../utils/utils";
+import { generateToken } from "../utils/utils";
 
-export const register = async ( req: Request, res: Response ) => {
-    try{
+export const register = async (req: Request, res: Response) => {
+    try {
 
         const verify = createUserSchema.safeParse(req.body);
 
-        if( !verify.success ) {
+        if (!verify.success) {
             res.status(400).json({
                 success: false,
                 message: "All fields are required",
@@ -24,10 +24,10 @@ export const register = async ( req: Request, res: Response ) => {
             email: verify.data.email
         });
 
-        if( user ) {
+        if (user) {
             res.status(400).json({
                 success: false,
-                message: "User with email " +  email + " already exists",
+                message: "User with email " + email + " already exists",
                 data: null
             });
             return;
@@ -52,7 +52,6 @@ export const register = async ( req: Request, res: Response ) => {
             success: true,
             message: "User created successfully",
             data: newUser,
-            token
         });
 
     } catch (e) {
@@ -65,12 +64,12 @@ export const register = async ( req: Request, res: Response ) => {
     }
 }
 
-export const login = async ( req: Request, res: Response ) => {
-    try{
+export const login = async (req: Request, res: Response) => {
+    try {
 
         const verify = loginUserSchema.safeParse(req.body);
 
-        if( !verify.success ) {
+        if (!verify.success) {
             res.status(400).json({
                 success: false,
                 message: "All fields are required",
@@ -85,7 +84,7 @@ export const login = async ( req: Request, res: Response ) => {
             email
         });
 
-        if( !user ) {
+        if (!user) {
             res.status(400).json({
                 success: false,
                 message: "User not found",
@@ -96,7 +95,7 @@ export const login = async ( req: Request, res: Response ) => {
 
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
-        if( !isPasswordCorrect ) {
+        if (!isPasswordCorrect) {
             res.status(400).json({
                 success: false,
                 message: "Incorrect password",
@@ -105,7 +104,7 @@ export const login = async ( req: Request, res: Response ) => {
             return;
         }
 
-        const token  = generateToken(user._id.toString());
+        const token = generateToken(user._id.toString());
 
         res.cookie('token', token, {
             httpOnly: true,
@@ -118,7 +117,6 @@ export const login = async ( req: Request, res: Response ) => {
             success: true,
             message: "Successfully logged in",
             data: user,
-            token
         });
 
     } catch (e) {
@@ -130,8 +128,39 @@ export const login = async ( req: Request, res: Response ) => {
     }
 }
 
+export const getCurrentUser = async (req: Request, res: Response) => {
+    try {
+
+        const userId = req.userId;
+
+        const user = await User.findById(userId).select("-password");
+
+        if (!user) {
+            res.status(404).json({
+                message: "User not found",
+                success: false,
+                data: null
+            });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "User fetched successfully",
+            data: user,
+        });
+    } catch (e) {
+        res.status(500).json({
+            success: false,
+            message: e,
+            data: null
+        });
+    }
+}
+
+
 export const logout = async (req: Request, res: Response) => {
-    try{
+    try {
 
         res.clearCookie('token');
 
@@ -141,7 +170,7 @@ export const logout = async (req: Request, res: Response) => {
             data: null
         });
 
-    } catch(e) {
+    } catch (e) {
         res.status(500).json({
             success: false,
             message: e,

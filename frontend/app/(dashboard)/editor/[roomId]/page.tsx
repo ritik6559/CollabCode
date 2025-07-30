@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -23,10 +24,8 @@ import ProgramOutput from "@/features/editor/components/program-output";
 import ErrorOutput from "@/features/editor/components/error-output";
 import CompilationOutput from "@/features/editor/components/compilation-output";
 import GettingStarted from "@/features/editor/components/getting-started";
-import {useAuth} from "@/features/auth/hooks/use-auth";
 import {getRoomById, joinRoom} from "@/features/dashboard/api";
 import {Room, RoomUser} from "@/features/dashboard/types";
-import useSaveCode from "@/features/dashboard/hooks/use-save-code";
 import {User} from "@/lib/types";
 
 const EditorPage = () => {
@@ -58,10 +57,9 @@ const EditorPage = () => {
     const { submitAndPoll, result, executeCode, error, loading } = useCodeExecution();
 
     // User authentication related state variables
-    const { isAuthenticated, token, user } = useAuth();
 
     // Code saving related hook
-    const { debouncedSave } = useSaveCode(roomId, token!);
+    // const { debouncedSave } = useSaveCode(roomId, token!);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -98,7 +96,7 @@ const EditorPage = () => {
         const getRoom = async () => {
             try {
                 setIsLoading(true);
-                const room: Room = await getRoomById(token!, roomId);
+                const room: Room = await getRoomById('', roomId);
                 setLanguageId(room.language);
                 setRoom(room);
                 setCode(room.code || '');
@@ -126,29 +124,29 @@ const EditorPage = () => {
                 socket.on("connect_error", handleError);
                 socket.on("connect_failed", handleError);
 
-                socket.emit(ACTION.JOIN, {
-                    roomId,
-                    username: currUsername,
-                    userId: user!._id
-                });
+                // socket.emit(ACTION.JOIN, {
+                //     roomId,
+                //     username: currUsername,
+                //     userId: user!._id
+                // });
 
                 socket.on(ACTION.JOINED, async ({ clients, username }) => {
-                    console.log('Joined room:', clients);
-                    if (username !== currUsername) {
-                        toast.success(`${username} joined the room`);
-                    }
-                    try {
-                        const room: Room = await joinRoom(roomId, user!._id, token!);
-                        setRoomMembers(Array.isArray(room.members) ? room.members : []);
-                        setActiveUsers(clients);
-                        socket.emit(ACTION.REQUEST_SYNC, {
-                            roomId,
-                            socketId: socket.id,
-                        });
-                    } catch (error) {
-                        console.error('Error joining room:', error);
-                        toast.error("Failed to join room");
-                    }
+                    // console.log('Joined room:', clients);
+                    // if (username !== currUsername) {
+                    //     toast.success(`${username} joined the room`);
+                    // }
+                    // try {
+                    //     const room: Room = await joinRoom(roomId, user!._id, token!);
+                    //     setRoomMembers(Array.isArray(room.members) ? room.members : []);
+                    //     setActiveUsers(clients);
+                    //     socket.emit(ACTION.REQUEST_SYNC, {
+                    //         roomId,
+                    //         socketId: socket.id,
+                    //     });
+                    // } catch (error) {
+                    //     console.error('Error joining room:', error);
+                    //     toast.error("Failed to join room");
+                    // }
                 });
 
                 socket.on(ACTION.DISCONNECTED, ({ socketId, username }) => {
@@ -168,11 +166,11 @@ const EditorPage = () => {
 
                 socket.on(ACTION.CODE_CHANGE, ({ code: incomingCode }) => {
                     if (incomingCode !== null && incomingCode !== undefined) {
-                        setSaving(true);
-                        isRemoteUpdate.current = true;
-                        setCode(incomingCode);
-                        debouncedSave(incomingCode);
-                        setSaving(false);
+                        // setSaving(true);
+                        // isRemoteUpdate.current = true;
+                        // setCode(incomingCode);
+                        // debouncedSave(incomingCode);
+                        // setSaving(false);
                     }
                 });
             } catch (error) {
@@ -217,10 +215,7 @@ const EditorPage = () => {
         });
     };
 
-    if (!isAuthenticated || !user || !token) {
-        toast.error("User not logged in.");
-        redirect("/sign-in");
-    }
+   
 
     if (!currUsername) {
         toast.error("Username is required");
