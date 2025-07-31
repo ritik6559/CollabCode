@@ -8,7 +8,7 @@ roomRouter.post("/", validateToken, createRoom);
 roomRouter.patch('/:roomId/join', validateToken, joinRoom);
 roomRouter.patch('/:roomId/update', validateToken, updateRoomCode);
 roomRouter.get('/:roomId', validateToken, getRoomById);
-roomRouter.get("/rooms", validateToken, getUserRooms);
+roomRouter.get("/", validateToken, getUserRooms);
 roomRouter.delete("/:roomId", validateToken, deleteRoom);
 
 export default roomRouter;

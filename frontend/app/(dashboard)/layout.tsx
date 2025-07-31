@@ -1,7 +1,7 @@
 'use client'
 
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
-import { Loader2 } from "lucide-react";
+import { Loader } from "lucide-react";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
 
@@ -12,7 +12,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     if( isLoading ){
         return (
             <div className="flex min-h-screen min-w-screen items-center justify-center" >
-                <Loader2 className="animate-spin" />
+                <Loader className="animate-spin text-white" />
             </div>
         )
     }
