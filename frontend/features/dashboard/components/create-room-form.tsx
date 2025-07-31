@@ -31,8 +31,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Plus, Code, Sparkles, Users } from 'lucide-react';
+import { CreateRoomInput, createRoomSchema } from '../types';
+import { useCreateRoom } from '../api/use-create-room';
 
 const languages = [
     { value: 11, label: 'Bosque', color: 'from-lime-500/20 to-lime-400/20 text-lime-300 border-lime-500/40' },
@@ -46,38 +47,28 @@ const languages = [
     { value: 28, label: 'Python 3.10', color: 'from-green-400/20 to-green-300/20 text-green-200 border-green-400/40' },
 ];
 
-
-const formSchema = z.object({
-    name: z.string().min(1, 'Room name is required').max(50, 'Room name must be less than 50 characters'),
-    description: z.string().max(200, 'Description must be less than 200 characters'),
-    language: z.string().min(1, 'Please select a programming language'),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
-interface CreateRoomFormProps {
-    onCreateRoom: (roomData: FormData) => Promise<void>;
-}
-
-const  CreateRoomForm = ({ onCreateRoom }: CreateRoomFormProps) => {
+const CreateRoomForm = () => {
     const [open, setOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const form = useForm<FormData>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<CreateRoomInput>({
+        resolver: zodResolver(createRoomSchema),
         defaultValues: {
             name: '',
             description: '',
-            language: '',
+            language: 4,
         },
     });
 
-    const selectedLanguage = languages.find(lang => lang.value.toString() === form.watch('language'));
+    const { mutateAsync: createRoom } = useCreateRoom();
 
-    const onSubmit = async (data: FormData) => {
+    const selectedLanguage = languages.find(lang => lang.value === form.watch('language'));
+
+    const onSubmit = async (data: CreateRoomInput) => {
         setIsSubmitting(true);
         try {
-            await onCreateRoom(data);
+            const room = await createRoom(data);
+            console.log(room);
             form.reset();
             setOpen(false);
         } catch (error) {
@@ -151,7 +142,7 @@ const  CreateRoomForm = ({ onCreateRoom }: CreateRoomFormProps) => {
                                         <Users className="h-4 w-4 text-gray-400" />
                                         <span>Programming Language</span>
                                     </FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} defaultValue={selectedLanguage?.label}>
                                         <FormControl>
                                             <SelectTrigger className="bg-gray-800/50 border-gray-700/50 text-white focus:border-blue-500/50 focus:ring-blue-500/20 backdrop-blur-sm h-12">
                                                 <SelectValue placeholder="Select a programming language">

@@ -23,45 +23,35 @@ import {
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Users, Hash, LogIn } from 'lucide-react';
-import {useRouter} from "next/navigation";
+import { JoinRoomInput, joinRoomSchema } from '../types';
+import { useJoinRoom } from '../api/use-join-room';
 
-const formSchema = z.object({
-    roomId: z.string().min(1, 'Room ID is required').min(6, 'Room ID must be at least 6 characters'),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
-interface JoinRoomFormProps {
-    onJoinRoom: (roomId: string) => void;
-}
-
-const JoinRoomForm = ({ onJoinRoom }: JoinRoomFormProps) => {
+const JoinRoomForm = () => {
     const [open, setOpen] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
 
-    const form = useForm<FormData>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<JoinRoomInput>({
+        resolver: zodResolver(joinRoomSchema),
         defaultValues: {
             roomId: '',
         },
     });
-    const router = useRouter();
 
+    const { mutateAsync: joinRoom } = useJoinRoom();
 
-
-    const onSubmit = async (data: FormData) => {
-        // setIsJoining(true);
-        // try {
-        //     router.push(`/editor/${data.roomId}?username=${user!.username}`);
-        //     form.reset();
-        //     setOpen(false);
-        // } catch (error) {
-        //     console.error('Error joining room:', error);
-        // } finally {
-        //     setIsJoining(false);
-        // }
+    const onSubmit = async (data: JoinRoomInput) => {
+        setIsJoining(true);
+        try {
+            const roomId = data.roomId;
+            await joinRoom( roomId );
+            form.reset();
+            setOpen(false);
+        } catch (error) {
+            console.error('Error joining room:', error);
+        } finally {
+            setIsJoining(false);
+        }
     };
 
 

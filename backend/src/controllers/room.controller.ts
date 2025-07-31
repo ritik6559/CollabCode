@@ -177,8 +177,8 @@ export const getUserRooms = async (req: Request, res: Response) => {
                 { admin: req.userId },
                 { joinedUser: req.userId }
             ]
-        }).populate('admin', 'username email')
-            .populate('joinedUser', 'username email');
+        }).populate('admin', '_id username email')
+            .populate('joinedUser', '_id username email');
 
         res.status(200).json({
             success: true,
@@ -218,8 +218,8 @@ export const getRoomById = async (req: Request, res: Response) => {
         }
 
         const room = await Room.findById(roomId)
-            .populate("admin", "username email")
-            .populate("joinedUser", "username email");
+            .populate("admin", "_id username email")
+            .populate("joinedUser", "_id username email");
 
         if (!room) {
             res.status(404).json({

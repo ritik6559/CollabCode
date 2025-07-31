@@ -2,9 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner";
 import { CreateRoomInput } from "../types";
 import axiosClient from "@/utils/axios-client";
+import { AxiosError } from "axios";
 
 export const useCreateRoom = () => {
-    
+
     const queryClient = useQueryClient();
 
     const mutation = useMutation({
@@ -14,12 +15,14 @@ export const useCreateRoom = () => {
             console.log(room);
             return room;
         },
-        onError: (e: Error) => {
-            console.log(e);
-            toast.error('Failed to create room');
+        onError: (error: AxiosError<{ message: string }>) => {
+            console.log(error);
+            const errorMessage = error?.response?.data?.message || "Failed to create room";
+            toast.error(errorMessage);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["rooms"] });
+            toast.success("Room created successfully.")
         }
     });
 

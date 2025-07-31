@@ -4,7 +4,7 @@ import { createRoom, deleteRoom, getRoomById, getUserRooms, joinRoom, updateRoom
 
 const roomRouter = express.Router();
 
-roomRouter.post("/", validateToken, createRoom);
+roomRouter.post("/", validateToken, createRoom); 
 roomRouter.patch('/:roomId/join', validateToken, joinRoom);
 roomRouter.patch('/:roomId/update', validateToken, updateRoomCode);
 roomRouter.get('/:roomId', validateToken, getRoomById);

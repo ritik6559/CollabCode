@@ -1,3 +1,5 @@
+'use client'
+
 import axiosClient from "@/utils/axios-client";
 import { useQuery } from "@tanstack/react-query"
 import { toast } from "sonner";

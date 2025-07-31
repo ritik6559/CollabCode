@@ -57,8 +57,6 @@ const Page = () => {
               <RoomCard
                 key={room._id}
                 room={room}
-                onDeleteRoom={handleDeleteRoom}
-                onLeaveRoom={handleLeaveRoom}
               />
             ))}
           </div>

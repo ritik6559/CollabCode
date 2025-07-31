@@ -12,7 +12,7 @@ export interface Room {
     name: string;
     description: string;
     language: number;
-    members: RoomUser[];
+    joinedUser?: RoomUser;
     createdAt: string;
     updatedAt: string;
     code: string;
@@ -30,4 +30,9 @@ export const createRoomSchema = z.object({
         .min(1, "Language is required"),
 });
 
+export const joinRoomSchema = z.object({
+    roomId: z.string().min(1, 'Room ID is required').min(6, 'Room ID must be at least 6 characters'),
+});
+
+export type JoinRoomInput = z.infer<typeof joinRoomSchema>;
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
