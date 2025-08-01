@@ -10,16 +10,12 @@ const page = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
-            {/*<Header />*/}
             <Header />
 
-            {/* Hero Section */}
             <Hero />
 
-            {/* Features Section */}
             <Features />
 
-            {/* CTA Section */}
             <Cta />
         </div>
     )

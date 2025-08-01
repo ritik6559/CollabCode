@@ -55,6 +55,7 @@ export const joinRoom = async (req: Request, res: Response) => {
         }
 
         const room = await Room.findById(roomId);
+        
         if (!room) {
             res.status(404).json({
                 success: false,
@@ -64,11 +65,23 @@ export const joinRoom = async (req: Request, res: Response) => {
             return;
         }
 
-        if (room.admin.toString() === userId) {
-            res.status(400).json({
-                success: false,
-                message: "Admin is already in the room",
-                data: null
+        const isAdmin = room.admin.toString() === userId;
+        const isAlreadyJoined = room.joinedUser?.toString() === userId;
+
+        if (isAdmin) {
+            res.status(200).json({
+                success: true,
+                message: "You are the admin",
+                data: room
+            });
+            return;
+        }
+
+        if (isAlreadyJoined) {
+            res.status(200).json({
+                success: true,
+                message: "You are already in this room",
+                data: room
             });
             return;
         }
@@ -82,21 +95,12 @@ export const joinRoom = async (req: Request, res: Response) => {
             return;
         }
 
-        if (room.admin.toString() === userId) {
-            res.status(400).json({
-                success: false,
-                message: "You cannot join your own room",
-                data: null
-            });
-            return;
-        }
-
         const updatedRoom = await Room.findByIdAndUpdate(
             roomId,
             { joinedUser: userId },
             { new: true }
         ).populate("admin", "_id username email")
-            .populate("joinedUser", "_id username email");
+         .populate("joinedUser", "_id username email");
 
         res.status(200).json({
             success: true,
@@ -104,15 +108,15 @@ export const joinRoom = async (req: Request, res: Response) => {
             data: updatedRoom
         });
 
-    } catch (e) {
-        console.error(e);
+    } catch (error) {
+        console.error("Error in joinRoom:", error);
         res.status(500).json({
             success: false,
-            message: e instanceof Error ? e.message : "Internal server error",
+            message: error instanceof Error ? error.message : "Internal server error",
             data: null
         });
     }
-}
+};
 
 export const leaveRoom = async (req: Request, res: Response) => {
     try {

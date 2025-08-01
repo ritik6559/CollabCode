@@ -1,12 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 import {toast} from "sonner";
-import {saveCodeToDatabase} from "@/features/editor/api";
+import { useUpdateCode } from '../api/use-update-code';
 
-const useSaveCode = (roomId: string, token: string, debounceDelay = 2000) => {
+const useSaveCode = (roomId: string, debounceDelay = 1000) => {
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const lastSavedCodeRef = useRef('');
+    const { mutateAsync: saveCodeToDatabase } = useUpdateCode();
 
     const debouncedSave = useCallback((code: string) => {
         if (code === lastSavedCodeRef.current) {
@@ -22,7 +23,10 @@ const useSaveCode = (roomId: string, token: string, debounceDelay = 2000) => {
 
         saveTimeoutRef.current = setTimeout(async () => {
             try {
-                await saveCodeToDatabase(roomId, code, token);
+                await saveCodeToDatabase({
+                    roomId,
+                    code
+                });
                 lastSavedCodeRef.current = code;
                 setLastSaved(new Date());
                 setIsSaving(false);
@@ -34,7 +38,7 @@ const useSaveCode = (roomId: string, token: string, debounceDelay = 2000) => {
                 toast.error('Failed to auto-save code');
             }
         }, debounceDelay);
-    }, [roomId, token, debounceDelay]);
+    }, [debounceDelay, saveCodeToDatabase, roomId]);
 
     const saveNow = useCallback(async (code: string) => {
         if (saveTimeoutRef.current) {
@@ -44,7 +48,10 @@ const useSaveCode = (roomId: string, token: string, debounceDelay = 2000) => {
         setIsSaving(true);
 
         try {
-            await saveCodeToDatabase(roomId, code, token);
+            await saveCodeToDatabase({
+                roomId,
+                code
+            });
             lastSavedCodeRef.current = code;
             setLastSaved(new Date());
             setIsSaving(false);
@@ -55,7 +62,7 @@ const useSaveCode = (roomId: string, token: string, debounceDelay = 2000) => {
             toast.error('Failed to save code');
             throw error;
         }
-    }, [roomId, token]);
+    }, [roomId, saveCodeToDatabase]);
 
     const forceSave = useCallback(async (code: string) => {
         if (saveTimeoutRef.current) {
@@ -64,13 +71,16 @@ const useSaveCode = (roomId: string, token: string, debounceDelay = 2000) => {
 
         if (code && code !== lastSavedCodeRef.current) {
             try {
-                await saveCodeToDatabase(roomId, code, token);
+                await saveCodeToDatabase({
+                    roomId,
+                    code
+                });
                 lastSavedCodeRef.current = code;
             } catch (error) {
                 console.error('Force save failed:', error);
             }
         }
-    }, [roomId, token]);
+    }, [roomId, saveCodeToDatabase]);
 
     const cleanup = useCallback(() => {
         if (saveTimeoutRef.current) {

@@ -11,7 +11,7 @@ import { redirect, useParams, useRouter, useSearchParams } from "next/navigation
 import {Loader, PanelLeftIcon, Play} from "lucide-react";
 import { initSocket } from "@/config/socket";
 import { Socket } from "socket.io-client";
-import { ACTION } from "@/lib/utils";
+import { ACTIONS } from "@/lib/utils";
 import { toast } from "sonner";
 import {useCodeExecution} from "@/hooks/use-code-execution";
 import {LANGUAGES} from "@/data";
@@ -24,9 +24,12 @@ import ProgramOutput from "@/features/editor/components/program-output";
 import ErrorOutput from "@/features/editor/components/error-output";
 import CompilationOutput from "@/features/editor/components/compilation-output";
 import GettingStarted from "@/features/editor/components/getting-started";
-import {getRoomById, joinRoom} from "@/features/dashboard/api";
-import {Room, RoomUser} from "@/features/dashboard/types";
+import {RoomUser} from "@/features/dashboard/types";
 import {User} from "@/lib/types";
+import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
+import { useGetRoomById } from "@/features/dashboard/api/use-get-room-by-id";
+import { useJoinRoom } from "@/features/dashboard/api/use-join-room";
+import useSaveCode from "@/features/dashboard/hooks/use-save-code";
 
 const EditorPage = () => {
     // Config state variables
@@ -49,17 +52,155 @@ const EditorPage = () => {
     const [code, setCode] = useState('');
     const [stdin, setStdin] = useState('');
     const [languageId, setLanguageId] = useState(28);
-    const [room, setRoom] = useState<Room | null>(null);
     const [saving, setSaving] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isSocketReady, setIsSocketReady] = useState(false);
 
     // Code execution related hook
     const { submitAndPoll, result, executeCode, error, loading } = useCodeExecution();
 
-    // User authentication related state variables
+    // User authentication and room related state variables
+    const { data: user, isLoading: userLoading, error: userError } = useGetCurrentUser();
+    const { data: room, isLoading: roomLoading, error: roomError } = useGetRoomById(roomId);
+    const { mutateAsync: joinRoom } = useJoinRoom();
 
     // Code saving related hook
-    // const { debouncedSave } = useSaveCode(roomId, token!);
+    const { debouncedSave, isSaving } = useSaveCode(roomId);
+
+    useEffect(() => {
+        if (!currUsername) {
+            toast.error("Username is required");
+            router.push("/home");
+        }
+    }, [currUsername, router]);
+
+    useEffect(() => {
+        if (userError) {
+            toast.error("Failed to load user data");
+            router.push("/home");
+        }
+        if (roomError) {
+            toast.error("Failed to load room data");
+            router.push("/home");
+        }
+    }, [userError, roomError, router]);
+
+    useEffect(() => {
+        if (hasInitialized.current || !user || !room || userLoading || roomLoading) {
+            return;
+        }
+
+        hasInitialized.current = true;
+
+        const initializeEditor = async () => {
+            try {
+                setLanguageId(room.language);
+                setCode(room.code || '');
+
+                const socket = await initSocket();
+                socketRef.current = socket;
+
+                const handleError = (e: Error) => {
+                    console.error(e);
+                    toast.error("Error connecting to room");
+                    router.push("/home");
+                };
+
+                socket.on("connect_error", handleError);
+                socket.on("connect_failed", handleError);
+
+                const joinTimeout = setTimeout(() => {
+                    console.warn("Room join timeout - proceeding anyway");
+                    setIsSocketReady(true);
+                }, 3000); 
+
+                socket.emit(ACTIONS.ROOM_JOIN, {
+                    roomId,
+                    username: currUsername,
+                    userId: user._id
+                });
+
+                socket.on(ACTIONS.USER_JOINED, ({ clients, username, socketId }) => {
+                    console.log('User joined room:', { clients, username, socketId });
+
+                    if (username !== currUsername) {
+                        toast.success(`${username} joined the room`);
+                    }
+                });
+
+                socket.on('connect', async () => {
+                    console.log('Socket connected successfully');
+                    
+                    try {
+                        await joinRoom(roomId);
+                        clearTimeout(joinTimeout);
+                        setIsSocketReady(true);
+                    } catch (error) {
+                        console.error('Error joining room:', error);
+                        toast.error("Failed to join room");
+                        router.push("/home");
+                    }
+                });
+
+           
+
+                // socket.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
+                //     if (username) {
+                //         toast.success(`${username} left the room`);
+                //     }
+                //     setActiveUsers((prevUsers) => {
+                //         return prevUsers.filter((user) => user.socketId !== socketId);
+                //     });
+                // });
+
+               
+
+                socket.on(ACTIONS.CODE_CHANGE, ({ code: incomingCode }) => {
+                    if (incomingCode !== null && incomingCode !== undefined) {
+                        setSaving(true);
+                        isRemoteUpdate.current = true;
+                        setCode(incomingCode);
+                        debouncedSave(incomingCode);
+                        setSaving(false);
+                    }
+                });
+
+                // If socket is already connected when we set up listeners
+                if (socket.connected) {
+                    try {
+                        await joinRoom(roomId);
+                        clearTimeout(joinTimeout);
+                        setIsSocketReady(true);
+                    } catch (error) {
+                        console.error('Error joining room on connected socket:', error);
+                        toast.error("Failed to join room");
+                        router.push("/home");
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error initializing editor:', error);
+                toast.error("Failed to initialize editor");
+                router.push("/home");
+            }
+        };
+
+        initializeEditor();
+
+        return () => {
+            const socket = socketRef.current;
+            if (socket) {
+                socket.disconnect();
+                socket.off("connect_error");
+                socket.off("connect_failed");
+                socket.off("connect");
+                socket.off(ACTIONS.USER_JOINED);
+                socket.off(ACTIONS.ROOM_JOIN);
+                socket.off(ACTIONS.CODE_CHANGE);
+                // socket.off(ACTIONS.SYNC_CODE);
+                socketRef.current = null;
+            }
+        };
+    }, [user, room, userLoading, roomLoading, roomId, currUsername, router, joinRoom, debouncedSave]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -89,118 +230,6 @@ const EditorPage = () => {
         }
     };
 
-    useEffect(() => {
-        if (hasInitialized.current) return;
-        hasInitialized.current = true;
-
-        const getRoom = async () => {
-            try {
-                setIsLoading(true);
-                const room: Room = await getRoomById('', roomId);
-                setLanguageId(room.language);
-                setRoom(room);
-                setCode(room.code || '');
-                setRoomMembers(Array.isArray(room.members) ? room.members : []);
-            } catch (error) {
-                console.error('Error fetching room:', error);
-                toast.error("Failed to load room");
-                router.push("/home");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        const init = async () => {
-            try {
-                const socket = await initSocket();
-                socketRef.current = socket;
-
-                const handleError = (e: Error) => {
-                    console.error(e);
-                    toast.error("Error joining room");
-                    router.push("/home");
-                };
-
-                socket.on("connect_error", handleError);
-                socket.on("connect_failed", handleError);
-
-                // socket.emit(ACTION.JOIN, {
-                //     roomId,
-                //     username: currUsername,
-                //     userId: user!._id
-                // });
-
-                socket.on(ACTION.JOINED, async ({ clients, username }) => {
-                    // console.log('Joined room:', clients);
-                    // if (username !== currUsername) {
-                    //     toast.success(`${username} joined the room`);
-                    // }
-                    // try {
-                    //     const room: Room = await joinRoom(roomId, user!._id, token!);
-                    //     setRoomMembers(Array.isArray(room.members) ? room.members : []);
-                    //     setActiveUsers(clients);
-                    //     socket.emit(ACTION.REQUEST_SYNC, {
-                    //         roomId,
-                    //         socketId: socket.id,
-                    //     });
-                    // } catch (error) {
-                    //     console.error('Error joining room:', error);
-                    //     toast.error("Failed to join room");
-                    // }
-                });
-
-                socket.on(ACTION.DISCONNECTED, ({ socketId, username }) => {
-                    toast.success(`${username} disconnected`);
-                    setActiveUsers((prevUsers) => {
-                        const safeUsers = Array.isArray(prevUsers) ? prevUsers : [];
-                        return safeUsers.filter((u) => u.socketId !== socketId);
-                    });
-                });
-
-                socket.on(ACTION.SYNC_CODE, ({ code: incomingCode }) => {
-                    if (incomingCode !== null && incomingCode !== undefined) {
-                        isRemoteUpdate.current = true;
-                        setCode(incomingCode);
-                    }
-                });
-
-                socket.on(ACTION.CODE_CHANGE, ({ code: incomingCode }) => {
-                    if (incomingCode !== null && incomingCode !== undefined) {
-                        // setSaving(true);
-                        // isRemoteUpdate.current = true;
-                        // setCode(incomingCode);
-                        // debouncedSave(incomingCode);
-                        // setSaving(false);
-                    }
-                });
-            } catch (error) {
-                console.error('Error initializing socket:', error);
-                toast.error("Failed to connect to room");
-                router.push("/home");
-            }
-        };
-
-        Promise.all([getRoom(), init()]).catch((error) => {
-            console.error('Initialization error:', error);
-            toast.error("Failed to initialize editor");
-            router.push("/home");
-        });
-
-        return () => {
-            const socket = socketRef.current;
-            if (socket) {
-                socket.disconnect();
-                socket.off("connect_error");
-                socket.off("connect_failed");
-                socket.off(ACTION.JOINED);
-                socket.off(ACTION.DISCONNECTED);
-                socket.off(ACTION.SYNC_CODE);
-                socket.off(ACTION.CODE_CHANGE);
-                socketRef.current = null;
-            }
-        };
-    }, []);
-
     const handleCodeChange = (value: string) => {
         if (isRemoteUpdate.current) {
             isRemoteUpdate.current = false;
@@ -209,24 +238,24 @@ const EditorPage = () => {
 
         setCode(value);
 
-        socketRef.current?.emit(ACTION.CODE_CHANGE, {
+        socketRef.current?.emit(ACTIONS.CODE_CHANGE, {
             roomId,
             code: value,
         });
     };
 
-   
-
-    if (!currUsername) {
-        toast.error("Username is required");
-        redirect("/home");
-    }
-
-    if (isLoading || !room) {
+    // Show loading screen while data is loading
+    if (userLoading || roomLoading || !user || !room || !isSocketReady) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-black">
                 <div className="flex flex-col items-center gap-4">
                     <Loader className="animate-spin w-8 h-8 text-white" />
+                    <p className="text-gray-400 text-sm">
+                        {userLoading ? "Loading user data..." : 
+                         roomLoading ? "Loading room data..." : 
+                         !isSocketReady ? "Connecting to room..." : 
+                         "Initializing editor..."}
+                    </p>
                 </div>
             </div>
         );
@@ -274,10 +303,10 @@ const EditorPage = () => {
                                         <div className="flex items-center justify-between">
                                             <CardTitle className="text-white">Code Editor</CardTitle>
                                             <div className="flex justify-center items-center gap-2">
-                                                {saving && (
+                                                {isSaving && (
                                                     <Badge
                                                         variant="secondary"
-                                                        className="bg-blue-600/20 text-blue-300"
+                                                        className="bg-blue-600/20 text-white"
                                                     >
                                                         <Loader className="animate-spin w-3 h-3 mr-1" />
                                                         Syncing code

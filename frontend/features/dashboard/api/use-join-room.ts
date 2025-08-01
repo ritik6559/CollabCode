@@ -1,12 +1,14 @@
 import axiosClient from "@/utils/axios-client"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { AxiosError } from "axios";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export const useJoinRoom = () => {
     
     const queryClient = useQueryClient();
-    
+    const router = useRouter();
+
     const mutation = useMutation({
         mutationFn: async(roomId: string) => {
             const res = await axiosClient.patch(`/room/${roomId}/join`);
@@ -20,6 +22,7 @@ export const useJoinRoom = () => {
         },
         onError: (error: AxiosError<{ message: string }>) => {
             console.log(error);
+            router.push("/home");
             const errorMessage = error?.response?.data?.message || "Failed to join room";
             toast.error(errorMessage);
         },

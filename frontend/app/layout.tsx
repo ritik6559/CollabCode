@@ -31,7 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gradient-to-br from-black via-gray-900 to-black `}
       >
         <QueryProvider>
-          <Toaster />
+          <Toaster closeButton />
           {children}
         </QueryProvider>
       </body>

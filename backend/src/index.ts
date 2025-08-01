@@ -43,15 +43,21 @@ io.on('connection', (socket) => {
     console.log("Socker connected: ", socket.id);
 
     socket.on(ACTIONS.ROOM_JOIN, (data) => {
-        const { email, room } = data;
+        console.log(data);
+        const { email, room, username } = data;
         emailToSocketMap.set(email, socket.id);
         socketidToEmailMap.set(socket.id, email);
 
         io.to(room).emit(ACTIONS.USER_JOINED, {
-            email, id: socket.id
+            email, id: socket.id, username
         });
         socket.join(room);
         io.to(socket.id).emit(ACTIONS.ROOM_JOIN, data);
+    });
+
+    socket.on(ACTIONS.CODE_CHANGE, ({ room, code }) => {
+        latestCodeMap[room] = code;
+        socket.to(room).emit(ACTIONS.CODE_CHANGE, { code });
     });
 
     socket.on(ACTIONS.USER_CALL, ({ to, offer }) => {
@@ -72,10 +78,7 @@ io.on('connection', (socket) => {
         io.to(to).emit(ACTIONS.PEER_NEGO_DONE, { from: socket.id, ans });
     });
 
-    socket.on(ACTIONS.CODE_CHANGE, ({ room, code }) => {
-        latestCodeMap[room] = code;
-        socket.to(room).emit(ACTIONS.CODE_CHANGE, { code });
-    });
+    
 
 });
 

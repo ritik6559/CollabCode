@@ -5,15 +5,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const ACTION = {
-  JOIN: "JOIN",
-  JOINED: "JOINED",
-  DISCONNECTED: "DISCONNECTED",
-  CODE_CHANGE: "CODE_CHANGE",
-  REQUEST_SYNC: "REQUEST_SYNC",
-  SYNC_CODE: "SYNC_CODE",
-  CURSOR_MOVE: "CURSOR_MOVE",
+export const ACTIONS = {
+    ROOM_JOIN: "ROOM_JOIN",
+    USER_JOINED: "USER_JOINED",
+    USER_CALL: "USER_CALL",
+    INCOMING_CALL: "INCOMING_CALL",
+    CALL_ACCEPTED: "CALL_ACCEPTED",
+    PEER_NEGO_NEEDED: "PEER_NEGO_NEEDED",
+    PEER_NEGO_DONE: "PEER_NEGO_DONE",
+    CODE_CHANGE: "CODE_CHANGE",
 };
+
 
 export const formatDate = (isoString: string) => {
   const date = new Date(isoString);
