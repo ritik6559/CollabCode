@@ -9,7 +9,7 @@ export const useJoinRoom = () => {
     
     const mutation = useMutation({
         mutationFn: async(roomId: string) => {
-            const res = await axiosClient.patch(`/${roomId}/join`);
+            const res = await axiosClient.patch(`/room/${roomId}/join`);
             const updatedRoom = res.data.data;
             console.log(updatedRoom);
             return res;

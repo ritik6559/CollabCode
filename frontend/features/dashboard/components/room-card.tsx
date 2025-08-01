@@ -24,7 +24,8 @@ import { toast } from "sonner";
 import { Room } from "@/features/dashboard/types";
 import { useDeleteRoom } from "../api/use-delete-room";
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
+import { useLeaveRoom } from "../api/use-leave-room";
 
 interface Props {
   room: Room;
@@ -35,10 +36,17 @@ const RoomCard = ({ room }: Props) => {
 
   const { data: user } = useGetCurrentUser();
   const { mutateAsync: deleteRoom } = useDeleteRoom();
+  const { mutateAsync: leaveRoom } = useLeaveRoom();
 
   const handleDelete = async () => {
     await deleteRoom(room._id);
   };
+
+
+
+  const handleLeave = async () => {
+    await leaveRoom(room._id);
+  }
 
   return (
     <Card
@@ -102,14 +110,13 @@ const RoomCard = ({ room }: Props) => {
                 Copy Room Id
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => {}}
+                onClick={handleLeave}
                 className="text-red-400 hover:text-red-300 hover:bg-red-900/20 cursor-pointer"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Leave Room
               </DropdownMenuItem>
 
-              {/* Only room admins can delete a room */}
               {user!._id == room.admin._id && (
                 <DropdownMenuItem
                   onClick={handleDelete}

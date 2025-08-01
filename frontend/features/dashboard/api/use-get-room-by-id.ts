@@ -10,7 +10,7 @@ export const useGetRoomById = (roomId: string) => {
         queryKey: ["room", roomId],
         queryFn: async () => {
             try {
-                const res = await axiosClient.get(`/${roomId}`);
+                const res = await axiosClient.get(`/room/${roomId}`);
                 return res.data.data;
             } catch (error: any) {
                 console.log(error);

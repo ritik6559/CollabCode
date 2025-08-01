@@ -114,6 +114,88 @@ export const joinRoom = async (req: Request, res: Response) => {
     }
 }
 
+export const leaveRoom = async (req: Request, res: Response) => {
+    try {
+        const { roomId } = req.params;
+        const userId = req.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(roomId)) {
+            res.status(400).json({
+                success: false,
+                message: "Invalid room ID format",
+                data: null
+            });
+            return;
+        }
+
+        const room = await Room.findById(roomId);
+
+        if (!room) {
+            res.status(404).json({
+                success: false,
+                message: "Room not found",
+                data: null
+            });
+            return;
+        }
+
+        const isAdmin = userId === room.admin._id.toString();
+        const isJoinedUser = userId === room.joinedUser?._id.toString();
+
+        if (!isAdmin && !isJoinedUser) {
+            res.status(403).json({
+                success: false,
+                message: "Not authorized to leave this room",
+                data: null
+            });
+            return;
+        }
+
+        let message = "";
+
+        if (isAdmin) {
+
+            if (room.joinedUser) {
+
+                room.admin = room.joinedUser;
+                room.joinedUser = null;
+                message = "Left room and transferred admin rights to the other user";
+
+            } else {
+
+                res.status(401).json({
+                    success: false,
+                    message: "Can't leave an empty room.",
+                    data: null
+                });
+                return;
+
+            }
+        } else {
+
+            room.joinedUser = null;
+            message = "Left room successfully";
+
+        }
+
+        await room.save();
+
+        res.status(200).json({
+            success: true,
+            message,
+            data: room
+        });
+
+    } catch (error) {
+        console.error("Error in leaveRoom:", error);
+        res.status(500).json({
+            success: false,
+            message: error instanceof Error ? error.message : "Internal server error",
+            data: null
+        });
+    }
+};
+
 export const updateRoomCode = async (req: Request, res: Response) => {
     try {
         const { roomId } = req.params;

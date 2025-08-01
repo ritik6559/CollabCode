@@ -9,7 +9,7 @@ export const useLeaveRoom = () => {
 
     const mutation = useMutation({
         mutationFn: async (roomId: string) => {
-            const res = await axiosClient.patch(`/${roomId}/leave`);
+            const res = await axiosClient.patch(`/room/${roomId}/leave`);
             const updatedRoom = res.data.data;
             console.log(updatedRoom);
             return res;

@@ -9,7 +9,7 @@ export const useDeleteRoom = () => {
 
     const mutation = useMutation({
         mutationFn: async (roomId: string) => {
-            const res = await axiosClient.delete(`/${roomId}`);
+            const res = await axiosClient.delete(`/room/${roomId}`);
             const data = res.data.data;
             console.log(data);
             return data;

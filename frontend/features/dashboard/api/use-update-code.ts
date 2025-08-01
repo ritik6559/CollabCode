@@ -14,7 +14,7 @@ export const useUpdateCode = () => {
 
     const mutation = useMutation({
         mutationFn: async ( { roomId, code }: UpdateCodeInput ) => {
-            const res = await axiosClient.patch(`/${roomId}/update`, {code});
+            const res = await axiosClient.patch(`/room/${roomId}/update`, {code});
             const updatedRoom = res.data.data;
             console.log(updatedRoom);
             return updatedRoom;
