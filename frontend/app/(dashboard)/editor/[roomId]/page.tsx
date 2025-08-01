@@ -7,7 +7,7 @@ import EditorSidebar from "@/features/editor/components/editor-sidebar";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
-import { redirect, useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {Loader, PanelLeftIcon, Play} from "lucide-react";
 import { initSocket } from "@/config/socket";
 import { Socket } from "socket.io-client";
@@ -164,7 +164,6 @@ const EditorPage = () => {
                     }
                 });
 
-                // If socket is already connected when we set up listeners
                 if (socket.connected) {
                     try {
                         await joinRoom(roomId);
@@ -244,7 +243,6 @@ const EditorPage = () => {
         });
     };
 
-    // Show loading screen while data is loading
     if (userLoading || roomLoading || !user || !room || !isSocketReady) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-black">

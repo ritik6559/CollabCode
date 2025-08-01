@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Copy, LogOut, Users } from 'lucide-react';
+import { Copy, LogOut } from 'lucide-react';
 import {toast} from "sonner";
 import {Room, RoomUser} from "@/features/dashboard/types";
 import {User} from "@/lib/types";
@@ -53,10 +53,6 @@ const EditorSidebar = ({ room, roomMembers, activeMembers, onLeaveRoom, onCopyRo
                     <h2 className="text-lg font-semibold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent truncate">
                         {room?.name || 'Loading...'}
                     </h2>
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Users className="w-4 h-4" />
-                        <span>{safeActiveMembers.length} member{safeActiveMembers.length !== 1 ? 's' : ''}</span>
-                    </div>
                 </div>
             </SidebarHeader>
 
