@@ -239,7 +239,7 @@ const EditorPage = () => {
         setCode(value);
 
         socket.emit(ACTIONS.CODE_CHANGE, {
-            roomId,
+            room: roomId,
             code: value,
         });
     };

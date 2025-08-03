@@ -15,7 +15,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*',
+        origin: ["http://localhost:3000"],
         methods: ['GET', 'POST'],
     },
 });
@@ -77,9 +77,6 @@ io.on('connection', (socket) => {
         console.log("nego done", ans);
         io.to(to).emit(ACTIONS.PEER_NEGO_FINAL, { from: socket.id, ans });
     });
-
-    
-
 });
 
 server.listen(PORT, () => {
