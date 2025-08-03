@@ -40,7 +40,7 @@ const socketidToEmailMap = new Map();
 const latestCodeMap: Record<string, string> = {};
 
 io.on('connection', (socket) => {
-    console.log("Socker connected: ", socket.id);
+    console.log("Socket connected: ", socket.id);
 
     socket.on(ACTIONS.ROOM_JOIN, (data) => {
         console.log(data);
@@ -75,7 +75,7 @@ io.on('connection', (socket) => {
 
     socket.on(ACTIONS.PEER_NEGO_DONE, ({ to, ans }) => {
         console.log("nego done", ans);
-        io.to(to).emit(ACTIONS.PEER_NEGO_DONE, { from: socket.id, ans });
+        io.to(to).emit(ACTIONS.PEER_NEGO_FINAL, { from: socket.id, ans });
     });
 
     

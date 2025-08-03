@@ -9,7 +9,6 @@ import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {Loader, PanelLeftIcon, Play} from "lucide-react";
-import { initSocket } from "@/config/socket";
 import { Socket } from "socket.io-client";
 import { ACTIONS } from "@/lib/utils";
 import { toast } from "sonner";
@@ -30,6 +29,7 @@ import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 import { useGetRoomById } from "@/features/dashboard/api/use-get-room-by-id";
 import { useJoinRoom } from "@/features/dashboard/api/use-join-room";
 import useSaveCode from "@/features/dashboard/hooks/use-save-code";
+import { useSocket } from "@/context/SocketProvider";
 
 const EditorPage = () => {
     // Config state variables
@@ -47,6 +47,7 @@ const EditorPage = () => {
     const socketRef = useRef<Socket | null>(null);
     const hasInitialized = useRef(false);
     const isRemoteUpdate = useRef(false);
+    const socket = useSocket();
 
     // Code editor related state variables
     const [code, setCode] = useState('');
@@ -90,13 +91,12 @@ const EditorPage = () => {
         }
 
         hasInitialized.current = true;
-
         const initializeEditor = async () => {
             try {
                 setLanguageId(room.language);
                 setCode(room.code || '');
 
-                const socket = await initSocket();
+                socketRef.current = socket;
                 socketRef.current = socket;
 
                 const handleError = (e: Error) => {
@@ -114,9 +114,9 @@ const EditorPage = () => {
                 }, 3000); 
 
                 socket.emit(ACTIONS.ROOM_JOIN, {
-                    roomId,
+                    email: user.email,
+                    room: roomId,
                     username: currUsername,
-                    userId: user._id
                 });
 
                 socket.on(ACTIONS.USER_JOINED, ({ clients, username, socketId }) => {
@@ -155,6 +155,7 @@ const EditorPage = () => {
                
 
                 socket.on(ACTIONS.CODE_CHANGE, ({ code: incomingCode }) => {
+                    console.log("code changed");
                     if (incomingCode !== null && incomingCode !== undefined) {
                         setSaving(true);
                         isRemoteUpdate.current = true;
@@ -199,7 +200,7 @@ const EditorPage = () => {
                 socketRef.current = null;
             }
         };
-    }, [user, room, userLoading, roomLoading, roomId, currUsername, router, joinRoom, debouncedSave]);
+    }, [user, room, userLoading, roomLoading, roomId, currUsername, router, joinRoom, debouncedSave, socket]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -218,7 +219,7 @@ const EditorPage = () => {
     };
 
     const handleLeaveRoom = () => {
-        socketRef.current?.emit('leave');
+        socket.emit('leave');
         router.push("/home");
     };
 
@@ -237,7 +238,7 @@ const EditorPage = () => {
 
         setCode(value);
 
-        socketRef.current?.emit(ACTIONS.CODE_CHANGE, {
+        socket.emit(ACTIONS.CODE_CHANGE, {
             roomId,
             code: value,
         });
