@@ -1,5 +1,7 @@
 # CollabCode 🚀
-A real-time collaborative coding platform that allows developers to create rooms and code together seamlessly. Built with modern web technologies for optimal performance and user experience.
+A powerful real-time collaborative coding platform that enables developers to create dedicated rooms and code together seamlessly with live synchronization, peer-to-peer WebRTC connections, and instant code execution. Built using modern web technologies like Next.js, Socket.IO, WebRTC, and Judge0 API, CollabCode delivers an efficient, fast, and responsive user experience across devices.
+
+![CollabCode Preview](./ss/ss.png)
 
 ## ✨ Features
 - **Real-time Collaboration**: Two developers can edit the same code simultaneously with peer-to-peer connection
