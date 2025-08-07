@@ -13,16 +13,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Copy, LogOut, Video, VideoOff, Mic, MicOff, PhoneCall, PhoneOff } from 'lucide-react';
 import { toast } from "sonner";
-import { Room, RoomUser } from "@/features/dashboard/types";
-import { User } from "@/lib/types";
+import { Room } from "@/features/dashboard/types";
 import peer from "@/services/peer";
 import { useSocket } from "@/context/SocketProvider";
 import { ACTIONS } from '@/lib/utils';
 
 interface EditorSidebarProps {
     room: Room;
-    roomMembers: RoomUser[];
-    activeMembers: User[];
     onLeaveRoom: () => void;
     onCopyRoomId: () => void;
 }

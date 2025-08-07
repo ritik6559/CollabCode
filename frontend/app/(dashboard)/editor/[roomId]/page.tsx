@@ -266,8 +266,6 @@ const EditorPage = () => {
                 <div className="flex w-full">
                     <EditorSidebar
                         room={room}
-                        roomMembers={roomMembers}
-                        activeMembers={activeUsers}
                         onLeaveRoom={handleLeaveRoom}
                         onCopyRoomId={handleCopyRoomId}
                     />
