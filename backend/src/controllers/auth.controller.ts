@@ -2,11 +2,10 @@ import { Request, Response } from "express";
 import { User } from "../models/user.model";
 import { createUserSchema, loginUserSchema } from "../utils/schema";
 import bcrypt from "bcryptjs";
-import { generateToken } from "../utils/utils";
+import { COOKIE_OPTIONS, generateToken } from "../utils/utils";
 
 export const register = async (req: Request, res: Response) => {
     try {
-
         const verify = createUserSchema.safeParse(req.body);
 
         if (!verify.success) {
@@ -20,11 +19,9 @@ export const register = async (req: Request, res: Response) => {
 
         const { email, password, username } = verify.data;
 
-        const user = await User.findOne({
-            email: verify.data.email
-        });
+        const existingUser = await User.findOne({ email });
 
-        if (user) {
+        if (existingUser) {
             res.status(400).json({
                 success: false,
                 message: "User with email " + email + " already exists",
@@ -41,24 +38,23 @@ export const register = async (req: Request, res: Response) => {
 
         const token = generateToken(newUser._id.toString());
 
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: true,
-            maxAge: 24 * 60 * 60 * 1000,
-            sameSite: 'strict'
-        });
+        res.cookie('token', token, COOKIE_OPTIONS);
 
         res.status(201).json({
             success: true,
             message: "User created successfully",
-            data: newUser,
+            data: {
+                _id: newUser._id,
+                username: newUser.username,
+                email: newUser.email,
+            },
         });
 
     } catch (e) {
-        console.log(e)
+        console.error(e);
         res.status(500).json({
             success: false,
-            message: e,
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }
@@ -66,7 +62,6 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
     try {
-
         const verify = loginUserSchema.safeParse(req.body);
 
         if (!verify.success) {
@@ -80,9 +75,7 @@ export const login = async (req: Request, res: Response) => {
 
         const { email, password } = verify.data;
 
-        const user = await User.findOne({
-            email
-        });
+        const user = await User.findOne({ email });
 
         if (!user) {
             res.status(400).json({
@@ -106,23 +99,23 @@ export const login = async (req: Request, res: Response) => {
 
         const token = generateToken(user._id.toString());
 
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: true,
-            maxAge: 24 * 60 * 60 * 1000,
-            sameSite: 'strict'
-        });
+        res.cookie('token', token, COOKIE_OPTIONS);
 
         res.status(200).json({
             success: true,
             message: "Successfully logged in",
-            data: user,
+            data: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+            },
         });
 
     } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
-            message: e,
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }
@@ -130,10 +123,7 @@ export const login = async (req: Request, res: Response) => {
 
 export const getCurrentUser = async (req: Request, res: Response) => {
     try {
-
-        const userId = req.userId;
-
-        const user = await User.findById(userId).select("-password");
+        const user = await User.findById(req.userId).select("-password");
 
         if (!user) {
             res.status(404).json({
@@ -150,18 +140,17 @@ export const getCurrentUser = async (req: Request, res: Response) => {
             data: user,
         });
     } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
-            message: e,
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }
 }
 
-
 export const logout = async (req: Request, res: Response) => {
     try {
-
         res.clearCookie('token');
 
         res.status(200).json({
@@ -171,9 +160,10 @@ export const logout = async (req: Request, res: Response) => {
         });
 
     } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
-            message: e,
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }

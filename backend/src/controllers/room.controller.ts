@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
-import { createRoomSchema, updateRoomSchema } from "../utils/schema";
+import { createRoomSchema } from "../utils/schema";
 import { Room } from "../models/room.model";
-import mongoose from "mongoose";
 
 export const createRoom = async (req: Request, res: Response) => {
     try {
@@ -21,7 +20,7 @@ export const createRoom = async (req: Request, res: Response) => {
         const room = await Room.create({
             name,
             description: description ?? "",
-            language: language,
+            language,
             admin: req.userId,
         });
 
@@ -32,6 +31,7 @@ export const createRoom = async (req: Request, res: Response) => {
         });
 
     } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
             message: e instanceof Error ? e.message : "Internal server error",
@@ -45,17 +45,8 @@ export const joinRoom = async (req: Request, res: Response) => {
         const { roomId } = req.params;
         const userId = req.userId;
 
-        if (!mongoose.Types.ObjectId.isValid(roomId)) {
-            res.status(400).json({
-                success: false,
-                message: "Invalid room ID format",
-                data: null
-            });
-            return;
-        }
-
         const room = await Room.findById(roomId);
-        
+
         if (!room) {
             res.status(404).json({
                 success: false,
@@ -108,11 +99,11 @@ export const joinRoom = async (req: Request, res: Response) => {
             data: updatedRoom
         });
 
-    } catch (error) {
-        console.error("Error in joinRoom:", error);
+    } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
-            message: error instanceof Error ? error.message : "Internal server error",
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }
@@ -122,15 +113,6 @@ export const leaveRoom = async (req: Request, res: Response) => {
     try {
         const { roomId } = req.params;
         const userId = req.userId;
-
-        if (!mongoose.Types.ObjectId.isValid(roomId)) {
-            res.status(400).json({
-                success: false,
-                message: "Invalid room ID format",
-                data: null
-            });
-            return;
-        }
 
         const room = await Room.findById(roomId);
 
@@ -158,28 +140,21 @@ export const leaveRoom = async (req: Request, res: Response) => {
         let message = "";
 
         if (isAdmin) {
-
-            if (room.joinedUser) {
-
-                room.admin = room.joinedUser;
-                room.joinedUser = null;
-                message = "Left room and transferred admin rights to the other user";
-
-            } else {
-
-                res.status(401).json({
+            if (!room.joinedUser) {
+                res.status(400).json({
                     success: false,
                     message: "Can't leave an empty room.",
                     data: null
                 });
                 return;
-
             }
-        } else {
 
+            room.admin = room.joinedUser;
+            room.joinedUser = null;
+            message = "Left room and transferred admin rights to the other user";
+        } else {
             room.joinedUser = null;
             message = "Left room successfully";
-
         }
 
         await room.save();
@@ -190,11 +165,11 @@ export const leaveRoom = async (req: Request, res: Response) => {
             data: room
         });
 
-    } catch (error) {
-        console.error("Error in leaveRoom:", error);
+    } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
-            message: error instanceof Error ? error.message : "Internal server error",
+            message: e instanceof Error ? e.message : "Internal server error",
             data: null
         });
     }
@@ -205,15 +180,6 @@ export const updateRoomCode = async (req: Request, res: Response) => {
         const { roomId } = req.params;
         const { code } = req.body;
 
-        if (!mongoose.Types.ObjectId.isValid(roomId)) {
-            res.status(400).json({
-                success: false,
-                message: "Invalid room ID format",
-                data: null
-            });
-            return;
-        }
-
         if (code === undefined || code === null) {
             res.status(400).json({
                 success: false,
@@ -223,8 +189,14 @@ export const updateRoomCode = async (req: Request, res: Response) => {
             return;
         }
 
-        const room = await Room.findById(roomId);
-        if (!room) {
+        const updatedRoom = await Room.findByIdAndUpdate(
+            roomId,
+            { code },
+            { new: true }
+        ).populate("admin", "_id username email")
+         .populate("joinedUser", "_id username email");
+
+        if (!updatedRoom) {
             res.status(404).json({
                 success: false,
                 message: "Room not found",
@@ -232,13 +204,6 @@ export const updateRoomCode = async (req: Request, res: Response) => {
             });
             return;
         }
-
-        const updatedRoom = await Room.findByIdAndUpdate(
-            roomId,
-            { code: code },
-            { new: true }
-        ).populate("admin", "_id username email")
-            .populate("joinedUser", "_id username email");
 
         res.status(200).json({
             success: true,
@@ -264,7 +229,7 @@ export const getUserRooms = async (req: Request, res: Response) => {
                 { joinedUser: req.userId }
             ]
         }).populate('admin', '_id username email')
-            .populate('joinedUser', '_id username email');
+          .populate('joinedUser', '_id username email');
 
         res.status(200).json({
             success: true,
@@ -273,6 +238,7 @@ export const getUserRooms = async (req: Request, res: Response) => {
         });
 
     } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
             message: e instanceof Error ? e.message : "Internal server error",
@@ -284,24 +250,6 @@ export const getUserRooms = async (req: Request, res: Response) => {
 export const getRoomById = async (req: Request, res: Response) => {
     try {
         const { roomId } = req.params;
-
-        if (!roomId) {
-            res.status(400).json({
-                success: false,
-                message: `Room id is required`,
-                data: null
-            });
-            return;
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(roomId)) {
-            res.status(400).json({
-                success: false,
-                message: "Invalid room ID format",
-                data: null
-            });
-            return;
-        }
 
         const room = await Room.findById(roomId)
             .populate("admin", "_id username email")
@@ -322,6 +270,7 @@ export const getRoomById = async (req: Request, res: Response) => {
             data: room
         });
     } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
             message: e instanceof Error ? e.message : "Internal server error",
@@ -333,24 +282,6 @@ export const getRoomById = async (req: Request, res: Response) => {
 export const deleteRoom = async (req: Request, res: Response) => {
     try {
         const { roomId } = req.params;
-
-        if (!roomId) {
-            res.status(400).json({
-                success: false,
-                message: "Room ID is required",
-                data: null
-            });
-            return;
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(roomId)) {
-            res.status(400).json({
-                success: false,
-                message: "Invalid room ID format",
-                data: null
-            });
-            return;
-        }
 
         const room = await Room.findById(roomId);
 
@@ -372,18 +303,19 @@ export const deleteRoom = async (req: Request, res: Response) => {
             return;
         }
 
-        const deletedRoom = await Room.findByIdAndDelete(roomId);
+        await room.deleteOne();
 
         res.status(200).json({
             success: true,
             message: "Room deleted successfully",
             data: {
-                roomId: deletedRoom!._id!,
-                name: deletedRoom!.name
+                roomId: room._id,
+                name: room.name
             }
         });
 
     } catch (e) {
+        console.error(e);
         res.status(500).json({
             success: false,
             message: e instanceof Error ? e.message : "Internal server error",

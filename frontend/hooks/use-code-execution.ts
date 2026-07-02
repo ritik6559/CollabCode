@@ -1,26 +1,11 @@
 import { useState, useCallback } from 'react';
-import {executeCodeClient, getResultClient, submitCodeClient} from "@/lib/judge0-client";
+import {getResultClient, submitCodeClient} from "@/lib/judge0-client";
 import {SubmissionRequest, SubmissionResult} from "@/data"
 
 export const useCodeExecution = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>('');
     const [result, setResult] = useState<SubmissionResult | null>(null);
-
-    const executeCode = useCallback(async (submission: SubmissionRequest) => {
-        setLoading(true);
-        setError('');
-        setResult(null);
-
-        try {
-            const data = await executeCodeClient(submission);
-            setResult(data);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
 
     const submitAndPoll = useCallback(async (submission: SubmissionRequest) => {
         setLoading(true);
@@ -42,7 +27,6 @@ export const useCodeExecution = () => {
                 attempts++;
             } while (data.status.id <= 2 && attempts < maxAttempts);
 
-            console.log(data);
             setResult(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
@@ -61,7 +45,6 @@ export const useCodeExecution = () => {
         loading,
         error,
         result,
-        executeCode,
         submitAndPoll,
         reset,
     };

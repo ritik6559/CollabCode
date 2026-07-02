@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSubmission } from '@/lib/judge0';
+import { SubmissionResult } from '@/data';
+
+interface RawSubmissionResult extends SubmissionResult {
+    status_id?: number;
+    exit_code?: number;
+}
 
 // Helper function to safely decode base64
 const decodeBase64 = (str: string | null): string | null => {
@@ -7,12 +13,12 @@ const decodeBase64 = (str: string | null): string | null => {
     try {
         return atob(str);
     } catch (e) {
-        console.log('Failed to decode base64:', e);
+        console.error('Failed to decode base64:', e);
         return str;
     }
 };
 
-const processExecutionResult = (result: any) => {
+const processExecutionResult = (result: RawSubmissionResult) => {
     return {
         ...result,
         stdout: decodeBase64(result.stdout),
@@ -31,10 +37,10 @@ const processExecutionResult = (result: any) => {
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { token: string } }
+    { params }: { params: Promise<{ token: string }> }
 ) {
     try {
-        const { token } = params;
+        const { token } = await params;
 
         if (!token) {
             return NextResponse.json(

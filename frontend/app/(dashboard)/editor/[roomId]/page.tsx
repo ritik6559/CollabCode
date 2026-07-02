@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -8,23 +7,20 @@ import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import {Loader, PanelLeftIcon, Play} from "lucide-react";
-import { Socket } from "socket.io-client";
+import { Loader, PanelLeftIcon, Play } from "lucide-react";
 import { ACTIONS } from "@/lib/utils";
 import { toast } from "sonner";
-import {useCodeExecution} from "@/hooks/use-code-execution";
-import {LANGUAGES} from "@/data";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import { useCodeExecution } from "@/hooks/use-code-execution";
+import { LANGUAGES } from "@/data";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {Textarea} from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
 import ExecutionStatus from "@/features/editor/components/execution-status";
 import ProgramOutput from "@/features/editor/components/program-output";
 import ErrorOutput from "@/features/editor/components/error-output";
 import CompilationOutput from "@/features/editor/components/compilation-output";
 import GettingStarted from "@/features/editor/components/getting-started";
-import {RoomUser} from "@/features/dashboard/types";
-import {User} from "@/lib/types";
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 import { useGetRoomById } from "@/features/dashboard/api/use-get-room-by-id";
 import { useJoinRoom } from "@/features/dashboard/api/use-join-room";
@@ -32,39 +28,27 @@ import useSaveCode from "@/features/dashboard/hooks/use-save-code";
 import { useSocket } from "@/context/SocketProvider";
 
 const EditorPage = () => {
-    // Config state variables
     const params = useParams();
     const roomId = params.roomId as string;
     const searchParams = useSearchParams();
     const router = useRouter();
     const currUsername = searchParams.get("username") || "Anonymous";
 
-    // Members related state variables
-    const [roomMembers, setRoomMembers] = useState<RoomUser[]>([]);
-    const [activeUsers, setActiveUsers] = useState<User[]>([]);
-
-    // Sockets related state variables
-    const socketRef = useRef<Socket | null>(null);
-    const hasInitialized = useRef(false);
-    const isRemoteUpdate = useRef(false);
     const socket = useSocket();
+    const hasHydrated = useRef(false);
+    const isRemoteUpdate = useRef(false);
 
-    // Code editor related state variables
     const [code, setCode] = useState('');
     const [stdin, setStdin] = useState('');
     const [languageId, setLanguageId] = useState(28);
-    const [saving, setSaving] = useState(false);
     const [isSocketReady, setIsSocketReady] = useState(false);
 
-    // Code execution related hook
-    const { submitAndPoll, result, executeCode, error, loading } = useCodeExecution();
+    const { submitAndPoll, result, error, loading } = useCodeExecution();
 
-    // User authentication and room related state variables
     const { data: user, isLoading: userLoading, error: userError } = useGetCurrentUser();
     const { data: room, isLoading: roomLoading, error: roomError } = useGetRoomById(roomId);
     const { mutateAsync: joinRoom } = useJoinRoom();
 
-    // Code saving related hook
     const { debouncedSave, isSaving } = useSaveCode(roomId);
 
     useEffect(() => {
@@ -85,131 +69,90 @@ const EditorPage = () => {
         }
     }, [userError, roomError, router]);
 
+    // Hydrate editor state once from the persisted room document
     useEffect(() => {
-        if (hasInitialized.current || !user || !room || userLoading || roomLoading) {
+        if (!room || hasHydrated.current) {
+            return;
+        }
+        hasHydrated.current = true;
+        setLanguageId(room.language);
+        setCode(room.code || '');
+    }, [room]);
+
+    // Socket lifecycle: register listeners, join the room, clean up symmetrically
+    const userEmail = user?.email;
+    const isRoomLoaded = !!room;
+
+    useEffect(() => {
+        if (!userEmail || !isRoomLoaded) {
             return;
         }
 
-        hasInitialized.current = true;
-        const initializeEditor = async () => {
+        const handleConnectError = (e: Error) => {
+            console.error(e);
+            toast.error("Error connecting to room");
+            router.push("/home");
+        };
+
+        const handleUserJoined = ({ username }: { username: string }) => {
+            if (username !== currUsername) {
+                toast.success(`${username} joined the room`);
+            }
+        };
+
+        const handleRemoteCodeChange = ({ code: incomingCode }: { code: string }) => {
+            if (incomingCode !== null && incomingCode !== undefined) {
+                isRemoteUpdate.current = true;
+                setCode(incomingCode);
+            }
+        };
+
+        const joinTimeout = setTimeout(() => {
+            console.warn("Room join timeout - proceeding anyway");
+            setIsSocketReady(true);
+        }, 3000);
+
+        const join = async () => {
             try {
-                setLanguageId(room.language);
-                setCode(room.code || '');
-
-                socketRef.current = socket;
-                socketRef.current = socket;
-
-                const handleError = (e: Error) => {
-                    console.error(e);
-                    toast.error("Error connecting to room");
-                    router.push("/home");
-                };
-
-                socket.on("connect_error", handleError);
-                socket.on("connect_failed", handleError);
-
-                const joinTimeout = setTimeout(() => {
-                    console.warn("Room join timeout - proceeding anyway");
-                    setIsSocketReady(true);
-                }, 3000); 
-
-                socket.emit(ACTIONS.ROOM_JOIN, {
-                    email: user.email,
-                    room: roomId,
-                    username: currUsername,
-                });
-
-                socket.on(ACTIONS.USER_JOINED, ({ clients, username, socketId }) => {
-                    console.log('User joined room:', { clients, username, socketId });
-
-                    if (username !== currUsername) {
-                        toast.success(`${username} joined the room`);
-                    }
-                });
-
-                socket.on('connect', async () => {
-                    console.log('Socket connected successfully');
-                    
-                    try {
-                        await joinRoom(roomId);
-                        clearTimeout(joinTimeout);
-                        setIsSocketReady(true);
-                    } catch (error) {
-                        console.error('Error joining room:', error);
-                        toast.error("Failed to join room");
-                        router.push("/home");
-                    }
-                });
-
-           
-
-                // socket.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
-                //     if (username) {
-                //         toast.success(`${username} left the room`);
-                //     }
-                //     setActiveUsers((prevUsers) => {
-                //         return prevUsers.filter((user) => user.socketId !== socketId);
-                //     });
-                // });
-
-               
-
-                socket.on(ACTIONS.CODE_CHANGE, ({ code: incomingCode }) => {
-                    console.log("code changed");
-                    if (incomingCode !== null && incomingCode !== undefined) {
-                        setSaving(true);
-                        isRemoteUpdate.current = true;
-                        setCode(incomingCode);
-                        debouncedSave(incomingCode);
-                        setSaving(false);
-                    }
-                });
-
-                if (socket.connected) {
-                    try {
-                        await joinRoom(roomId);
-                        clearTimeout(joinTimeout);
-                        setIsSocketReady(true);
-                    } catch (error) {
-                        console.error('Error joining room on connected socket:', error);
-                        toast.error("Failed to join room");
-                        router.push("/home");
-                    }
-                }
-
+                await joinRoom(roomId);
+                clearTimeout(joinTimeout);
+                setIsSocketReady(true);
             } catch (error) {
-                console.error('Error initializing editor:', error);
-                toast.error("Failed to initialize editor");
+                console.error('Error joining room:', error);
+                toast.error("Failed to join room");
                 router.push("/home");
             }
         };
 
-        initializeEditor();
+        socket.on("connect_error", handleConnectError);
+        socket.on(ACTIONS.USER_JOINED, handleUserJoined);
+        socket.on(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
+        socket.on("connect", join);
+
+        socket.emit(ACTIONS.ROOM_JOIN, {
+            email: userEmail,
+            room: roomId,
+            username: currUsername,
+        });
+
+        if (socket.connected) {
+            join();
+        } else {
+            socket.connect();
+        }
 
         return () => {
-            const socket = socketRef.current;
-            if (socket) {
-                socket.disconnect();
-                socket.off("connect_error");
-                socket.off("connect_failed");
-                socket.off("connect");
-                socket.off(ACTIONS.USER_JOINED);
-                socket.off(ACTIONS.ROOM_JOIN);
-                socket.off(ACTIONS.CODE_CHANGE);
-                // socket.off(ACTIONS.SYNC_CODE);
-                socketRef.current = null;
-            }
+            clearTimeout(joinTimeout);
+            socket.off("connect_error", handleConnectError);
+            socket.off(ACTIONS.USER_JOINED, handleUserJoined);
+            socket.off(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
+            socket.off("connect", join);
+            socket.disconnect();
         };
-    }, [user, room, userLoading, roomLoading, roomId, currUsername, router, joinRoom, debouncedSave, socket]);
+    }, [socket, userEmail, isRoomLoaded, roomId, currUsername, router, joinRoom]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        await executeCode({
-            source_code: code,
-            language_id: languageId,
-            stdin,
-        });
 
         await submitAndPoll({
             source_code: code,
@@ -219,7 +162,6 @@ const EditorPage = () => {
     };
 
     const handleLeaveRoom = () => {
-        socket.emit('leave');
         router.push("/home");
     };
 
@@ -237,6 +179,7 @@ const EditorPage = () => {
         }
 
         setCode(value);
+        debouncedSave(value);
 
         socket.emit(ACTIONS.CODE_CHANGE, {
             room: roomId,
@@ -250,9 +193,9 @@ const EditorPage = () => {
                 <div className="flex flex-col items-center gap-4">
                     <Loader className="animate-spin w-8 h-8 text-white" />
                     <p className="text-gray-400 text-sm">
-                        {userLoading ? "Loading user data..." : 
-                         roomLoading ? "Loading room data..." : 
-                         !isSocketReady ? "Connecting to room..." : 
+                        {userLoading ? "Loading user data..." :
+                         roomLoading ? "Loading room data..." :
+                         !isSocketReady ? "Connecting to room..." :
                          "Initializing editor..."}
                     </p>
                 </div>

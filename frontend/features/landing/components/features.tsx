@@ -1,5 +1,5 @@
 import React from 'react';
-import {Clock, Target, Users, Video} from "lucide-react";
+import {Clock, Target, Users, Zap} from "lucide-react";
 
 const Features = () => {
     return (
@@ -21,9 +21,9 @@ const Features = () => {
                         description: "Code together with peers in real-time, share ideas, and learn from each other in an interactive environment with live cursors and instant synchronization."
                     },
                     {
-                        icon: Video,
-                        title: "Integrated Video Calls",
-                        description: "Connect face-to-face with your coding partners through seamless WebRTC video calls. See and communicate with your team while working on the same codebase."
+                        icon: Zap,
+                        title: "Instant Code Execution",
+                        description: "Run your code directly in the browser with support for multiple programming languages. Get instant feedback with program output, errors, and compilation results."
                     },
                     {
                         icon: Target,

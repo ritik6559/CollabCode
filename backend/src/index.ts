@@ -34,19 +34,11 @@ app.use(cookieParser());
 app.use("/api/auth", authRoute);
 app.use("/api/room", roomRoute);
 
-const emailToSocketMap = new Map();
-const socketidToEmailMap = new Map();
-
-const latestCodeMap: Record<string, string> = {};
-
 io.on('connection', (socket) => {
     console.log("Socket connected: ", socket.id);
 
     socket.on(ACTIONS.ROOM_JOIN, (data) => {
-        console.log(data);
         const { email, room, username } = data;
-        emailToSocketMap.set(email, socket.id);
-        socketidToEmailMap.set(socket.id, email);
 
         io.to(room).emit(ACTIONS.USER_JOINED, {
             email, id: socket.id, username
@@ -56,26 +48,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on(ACTIONS.CODE_CHANGE, ({ room, code }) => {
-        latestCodeMap[room] = code;
         socket.to(room).emit(ACTIONS.CODE_CHANGE, { code });
-    });
-
-    socket.on(ACTIONS.USER_CALL, ({ to, offer }) => {
-        io.to(to).emit(ACTIONS.INCOMING_CALL, { from: socket.id, offer });
-    });
-
-    socket.on(ACTIONS.CALL_ACCEPTED, ({ to, ans }) => {
-        io.to(to).emit(ACTIONS.CALL_ACCEPTED, { from: socket.id, ans });
-    });
-
-    socket.on(ACTIONS.PEER_NEGO_NEEDED , ({ to, offer }) => {
-        console.log("nego need: ", offer);
-        io.to(to).emit(ACTIONS.PEER_NEGO_NEEDED, { from: socket.id, offer });
-    });
-
-    socket.on(ACTIONS.PEER_NEGO_DONE, ({ to, ans }) => {
-        console.log("nego done", ans);
-        io.to(to).emit(ACTIONS.PEER_NEGO_FINAL, { from: socket.id, ans });
     });
 });
 

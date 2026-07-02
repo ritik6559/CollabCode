@@ -1,4 +1,4 @@
-import {Judge0Config, SubmissionRequest, SubmissionResult} from "@/data";
+import {Judge0Config, SubmissionRequest} from "@/data";
 
 const url = 'https://judge0-extra-ce.p.rapidapi.com';
 
@@ -20,13 +20,10 @@ export const submitCode = async (submission: SubmissionRequest, config: Judge0Co
     });
 
     if (!response.ok) {
-        console.log(response);
         throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-
-    return data;
+    return response.json();
 }
 
 export const getSubmission = async (token: string, config: Judge0Config) => {
@@ -37,31 +34,9 @@ export const getSubmission = async (token: string, config: Judge0Config) => {
     });
 
     if (!response.ok) {
-        console.log(response);
         throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-
-    return data;
-}
-
-export const executeCode = async (
-    submission: SubmissionRequest,
-    config: Judge0Config
-): Promise<SubmissionResult> => {
-    const submitResponse = await submitCode(submission, config);
-
-    let result: SubmissionResult;
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    do {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        result = await getSubmission(submitResponse.token, config);
-        attempts++;
-    } while (result.status.id <= 2 && attempts < maxAttempts);
-
-    return result;
+    return response.json();
 }
 

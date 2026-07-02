@@ -1,11 +1,10 @@
 # CollabCode 🚀
-A powerful real-time collaborative coding platform that enables developers to create dedicated rooms and code together seamlessly with live synchronization, peer-to-peer WebRTC connections, and instant code execution. Built using modern web technologies like Next.js, Socket.IO, WebRTC, and Judge0 API, CollabCode delivers an efficient, fast, and responsive user experience across devices.
+A powerful real-time collaborative coding platform that enables developers to create dedicated rooms and code together seamlessly with live synchronization and instant code execution. Built using modern web technologies like Next.js, Socket.IO, and Judge0 API, CollabCode delivers an efficient, fast, and responsive user experience across devices.
 
 ![CollabCode Preview](./ss/ss.png)
 
 ## ✨ Features
-- **Real-time Collaboration**: Two developers can edit the same code simultaneously with peer-to-peer connection
-- **WebRTC Integration**: Direct peer-to-peer communication for more enhanced collaborative environment.
+- **Real-time Collaboration**: Two developers can edit the same code simultaneously with live synchronization
 - **Room-based System**: Create and join coding rooms with unique identifiers (limited to 2 users per room)
 - **Live Code Execution**: Run code instantly with Judge0 API integration
 - **Multi-language Support**: Support for popular programming languages
@@ -20,12 +19,11 @@ A powerful real-time collaborative coding platform that enables developers to cr
 - **shadcn/ui** - High-quality, accessible React components
 - **Socket.IO Client** - Real-time bidirectional event-based communication
 - **React Query (TanStack Query)** - Powerful data synchronization and caching
-- **WebRTC** - Peer-to-peer real-time communication
 
 ### Backend
 - **Node.js** - JavaScript runtime for server-side development
 - **Express.js** - Fast, unopinionated web framework for Node.js
-- **Socket.IO** - Real-time WebSocket communication and signaling for WebRTC
+- **Socket.IO** - Real-time WebSocket communication
 - **MongoDB** - NoSQL database for flexible data storage
 - **Judge0 API** - Code execution engine for multiple programming languages
 
@@ -87,14 +85,10 @@ Make sure you have the following installed:
 
 ## 🔧 Key Components
 
-### WebRTC Peer-to-Peer Collaboration
-CollabCode now uses WebRTC for direct peer-to-peer communication between collaborators, providing:
-- **Two-user limit**: Each room supports exactly 2 developers for optimal performance
-- **Reduced server load**: Most communication happens directly between peers
-
 ### Real-time Synchronization
-- Socket.IO handles WebRTC signaling and room management
+- Socket.IO handles room management and code synchronization
 - Every keystroke is synchronized in real-time between the two connected peers
+- Code changes are auto-saved to the database with debouncing
 
 ### Code Execution
 Integration with Judge0 API allows users to run their collaborative code in multiple programming languages including:
@@ -113,15 +107,12 @@ Integration with Judge0 API allows users to run their collaborative code in mult
 - Optimized data fetching and synchronization
 
 ## 📝 Usage Notes
-- **Room Capacity**: Each room is limited to 2 users for optimal peer-to-peer performance
-- **Connection Requirements**: Both users must have WebRTC-compatible browsers
+- **Room Capacity**: Each room is limited to 2 users
 - **Network**: Works best with stable internet connections for seamless collaboration
 
 ## 📞 Support
 If you have any questions or need help, please:
 - Open an issue on GitHub
-- Check the WebRTC compatibility of your browser
-- Ensure firewall settings allow P2P connections
 
 ---
 **Built with ❤️ by Ritik**
