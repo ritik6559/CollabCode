@@ -62,11 +62,18 @@ Features are organized under `frontend/features/`:
 
 React Query is set up via `frontend/app/query-provider.tsx`. Axios client with base URL from env is at `frontend/utils/axios-client.ts`.
 
+### Backend Structure (module-first)
+The backend is being migrated to a module-first layout under `backend/src/`:
+- `modules/<feature>/` — one directory per domain feature containing its routes, controller, service, Zod schemas, Mongoose model, and middleware. `modules/auth/` is done; `room` still lives in the legacy `controllers/`/`routes/`/`models/` layout and should be converted the same way.
+- `common/` — shared infrastructure: `ApiError` (status-coded error class), `asyncHandler` (wraps async handlers so rejections reach the error middleware), `errorHandler` (global error middleware, registered last in `index.ts`), `validateBody(schema)` (Zod body validation), `validateObjectId(param)`.
+
+Layering convention: routes wire middleware + controller; controllers are thin `asyncHandler`-wrapped functions that call services and shape `{ success, message, data }` responses; services hold business logic, are HTTP-agnostic, and throw `ApiError` for domain failures. All error responses flow through `errorHandler`.
+
 ### Backend API Routes
-- `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` — JWT auth via httpOnly cookies
+- `POST /api/auth/register`, `POST /api/auth/login`, `DELETE /api/auth/logout`, `GET /api/auth/me` — JWT auth via httpOnly cookies
 - `GET /api/room`, `POST /api/room`, `GET /api/room/:roomId`, `DELETE /api/room/:roomId`, `PATCH /api/room/:roomId/join`, `PATCH /api/room/:roomId/leave`, `PATCH /api/room/:roomId/update`
 
-Auth middleware at `backend/src/middlewares/auth.middleware.ts` validates the JWT from the `token` cookie. `validateObjectId` middleware (`backend/src/middlewares/validate-object-id.middleware.ts`) guards all `:roomId` routes.
+`validateToken` (`backend/src/modules/auth/auth.middleware.ts`) validates the JWT from the `token` cookie and sets `req.userId`; `validateObjectId` (`backend/src/common/validate-object-id.middleware.ts`) guards all `:roomId` routes.
 
 ### Room Constraints
 Rooms are limited to 2 users (admin + one joined user), enforced in `backend/src/controllers/room.controller.ts`.

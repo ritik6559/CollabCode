@@ -1,6 +1,6 @@
 import express from "express";
-import { validateToken } from "../middlewares/auth.middleware";
-import { validateObjectId } from "../middlewares/validate-object-id.middleware";
+import { validateToken } from "../modules/auth/auth.middleware";
+import { validateObjectId } from "../common/validate-object-id.middleware";
 import { createRoom, deleteRoom, getRoomById, getUserRooms, joinRoom, leaveRoom, updateRoomCode } from "../controllers/room.controller";
 
 const roomRouter = express.Router();

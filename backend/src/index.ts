@@ -1,16 +1,15 @@
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
 import { ACTIONS } from './utils/actions';
 import { initDB } from "./db";
-import authRoute from "./routes/auth.route";
+import { errorHandler } from "./common/error.middleware";
+import authRoute from "./modules/auth/auth.routes";
 import roomRoute from "./routes/room.route";
 
-dotenv.config();
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -20,7 +19,13 @@ const io = new Server(server, {
     },
 });
 const PORT = process.env.PORT || 8000;
-initDB().then(() => console.log('DB connected'));
+
+initDB()
+    .then(() => console.log('DB connected'))
+    .catch((e) => {
+        console.error('DB connection failed:', e);
+        process.exit(1);
+    });
 
 app.use(express.json());
 app.use(cors({
@@ -33,6 +38,8 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoute);
 app.use("/api/room", roomRoute);
+
+app.use(errorHandler);
 
 io.on('connection', (socket) => {
     console.log("Socket connected: ", socket.id);
