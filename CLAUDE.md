@@ -44,9 +44,9 @@ JWT_SECRET=your-secret-key
 
 ### Real-time Collaboration Flow
 1. The frontend gets a shared Socket.IO client from `frontend/context/SocketProvider.tsx`; the editor page joins a room via `socket.emit(ACTIONS.ROOM_JOIN, ...)`
-2. `CODE_CHANGE` events are relayed to the other peer via `socket.to(room).emit(...)` in `backend/src/index.ts` — the server holds no document state
+2. `CODE_CHANGE` events are relayed to the other peer via `socket.to(room).emit(...)` in `backend/src/modules/room/room.gateway.ts` — the server holds no document state
 3. The typing client persists its own code via the debounced `useSaveCode` hook (`PATCH /api/room/:roomId/update`); the receiving client only applies the change
-4. Socket.IO event names (`ROOM_JOIN`, `USER_JOINED`, `CODE_CHANGE`) are defined in `backend/src/utils/actions.ts` and mirrored as `ACTIONS` in `frontend/lib/utils.ts`
+4. Socket.IO event names (`ROOM_JOIN`, `USER_JOINED`, `CODE_CHANGE`) are defined in `backend/src/modules/room/room.events.ts` and mirrored as `ACTIONS` in `frontend/lib/utils.ts`
 
 ### Code Execution Pipeline
 - Frontend submits code via `POST /api/submit` (Next.js route handler), which returns a Judge0 token
@@ -63,11 +63,11 @@ Features are organized under `frontend/features/`:
 React Query is set up via `frontend/app/query-provider.tsx`. Axios client with base URL from env is at `frontend/utils/axios-client.ts`.
 
 ### Backend Structure (module-first)
-The backend is being migrated to a module-first layout under `backend/src/`:
-- `modules/<feature>/` — one directory per domain feature containing its routes, controller, service, Zod schemas, Mongoose model, and middleware. `modules/auth/` is done; `room` still lives in the legacy `controllers/`/`routes/`/`models/` layout and should be converted the same way.
+The backend uses a module-first layout under `backend/src/`:
+- `modules/<feature>/` — one directory per domain feature containing its routes, controller, service, Zod schemas, Mongoose model, and middleware. Existing modules: `auth` (also owns the User model and `validateToken`) and `room` (also owns the Socket.IO layer: `room.gateway.ts` registers socket handlers, `room.events.ts` defines the `ACTIONS` event names).
 - `common/` — shared infrastructure: `ApiError` (status-coded error class), `asyncHandler` (wraps async handlers so rejections reach the error middleware), `errorHandler` (global error middleware, registered last in `index.ts`), `validateBody(schema)` (Zod body validation), `validateObjectId(param)`.
 
-Layering convention: routes wire middleware + controller; controllers are thin `asyncHandler`-wrapped functions that call services and shape `{ success, message, data }` responses; services hold business logic, are HTTP-agnostic, and throw `ApiError` for domain failures. All error responses flow through `errorHandler`.
+Layering convention: routes wire middleware + controller; controllers are thin `asyncHandler`-wrapped functions that call services and shape `{ success, message, data }` responses; services hold business logic, are HTTP-agnostic, and throw `ApiError` for domain failures. All error responses flow through `errorHandler`. New features should follow this same module pattern.
 
 ### Backend API Routes
 - `POST /api/auth/register`, `POST /api/auth/login`, `DELETE /api/auth/logout`, `GET /api/auth/me` — JWT auth via httpOnly cookies

@@ -12,3 +12,9 @@ export const createRoomSchema = z.object({
         .min(1, "Language is required"),
 });
 
+export const updateRoomCodeSchema = z.object({
+    code: z.string({ required_error: "Code field is required" }),
+});
+
+export type CreateRoomInput = z.infer<typeof createRoomSchema>;
+export type UpdateRoomCodeInput = z.infer<typeof updateRoomCodeSchema>;

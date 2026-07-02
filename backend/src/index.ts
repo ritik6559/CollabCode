@@ -4,11 +4,11 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
-import { ACTIONS } from './utils/actions';
 import { initDB } from "./db";
 import { errorHandler } from "./common/error.middleware";
 import authRoute from "./modules/auth/auth.routes";
-import roomRoute from "./routes/room.route";
+import roomRoute from "./modules/room/room.routes";
+import { registerRoomHandlers } from "./modules/room/room.gateway";
 
 const app = express();
 const server = http.createServer(app);
@@ -44,19 +44,7 @@ app.use(errorHandler);
 io.on('connection', (socket) => {
     console.log("Socket connected: ", socket.id);
 
-    socket.on(ACTIONS.ROOM_JOIN, (data) => {
-        const { email, room, username } = data;
-
-        io.to(room).emit(ACTIONS.USER_JOINED, {
-            email, id: socket.id, username
-        });
-        socket.join(room);
-        io.to(socket.id).emit(ACTIONS.ROOM_JOIN, data);
-    });
-
-    socket.on(ACTIONS.CODE_CHANGE, ({ room, code }) => {
-        socket.to(room).emit(ACTIONS.CODE_CHANGE, { code });
-    });
+    registerRoomHandlers(io, socket);
 });
 
 server.listen(PORT, () => {
