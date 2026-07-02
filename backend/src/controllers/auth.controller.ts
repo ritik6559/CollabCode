@@ -52,6 +52,7 @@ export const register = async (req: Request, res: Response) => {
 
     } catch (e) {
         console.error(e);
+
         res.status(500).json({
             success: false,
             message: e instanceof Error ? e.message : "Internal server error",
@@ -113,6 +114,7 @@ export const login = async (req: Request, res: Response) => {
 
     } catch (e) {
         console.error(e);
+
         res.status(500).json({
             success: false,
             message: e instanceof Error ? e.message : "Internal server error",
@@ -131,6 +133,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
                 success: false,
                 data: null
             });
+
             return;
         }
 
@@ -141,6 +144,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
         });
     } catch (e) {
         console.error(e);
+        
         res.status(500).json({
             success: false,
             message: e instanceof Error ? e.message : "Internal server error",
