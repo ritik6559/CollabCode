@@ -4,9 +4,13 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Play, Sparkles, Users } from "lucide-react";
+import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 
 const Hero = () => {
     const router = useRouter();
+    const { data: user } = useGetCurrentUser();
+    // Signed-in users go straight to their dashboard; new visitors sign up
+    const startDestination = user ? "/home" : "/sign-up";
 
     return (
         <section
@@ -48,7 +52,7 @@ const Hero = () => {
                     style={{ animationDelay: "0.35s" }}
                 >
                     <Button
-                        onClick={() => router.push("/home")}
+                        onClick={() => router.push(startDestination)}
                         className="lp-shine group h-12 bg-gradient-to-r from-amber-400 to-orange-500 px-7 text-base font-semibold text-stone-950 shadow-xl shadow-orange-500/25 transition-transform hover:scale-[1.03] hover:from-amber-300 hover:to-orange-400"
                     >
                         Start coding now

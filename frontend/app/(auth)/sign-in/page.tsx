@@ -12,7 +12,7 @@ import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import { LoginUserInput, loginUserSchema } from '@/features/auth/types';
 import { useLoginUser } from '@/features/auth/api/use-login-user';
 import { getApiErrorMessage } from '@/lib/api';
-import FormErrorBanner from '@/features/auth/components/form-error';
+import FormErrorBanner from '@/components/form-error';
 
 const inputClasses =
     "h-11 border-stone-100/10 bg-stone-900/60 pl-10 text-stone-100 placeholder:text-stone-500 focus-visible:border-amber-400/50 focus-visible:ring-amber-400/20";

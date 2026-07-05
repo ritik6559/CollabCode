@@ -1,24 +1,12 @@
 'use client'
 
-import axiosClient from "@/utils/axios-client";
-import { useQuery } from "@tanstack/react-query"
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { getUserRooms } from "./room.api";
 
 export const useGetUserRooms = () => {
-    const query = useQuery({
+    return useQuery({
         queryKey: ["rooms"],
-        queryFn: async () => {
-            try{
-                const res = await axiosClient.get("/room");
-                const rooms = res.data.data;
-                console.log(rooms);
-                return rooms;
-            } catch (e){
-                console.log(e);
-                toast.error("Failed to fecth rooms.")
-            }
-        }
+        queryFn: getUserRooms,
+        retry: 1,
     });
-
-    return query;
-}
+};

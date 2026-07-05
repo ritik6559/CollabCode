@@ -1,29 +1,19 @@
-import axiosClient from "@/utils/axios-client";
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { AxiosError } from "axios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { deleteRoom } from "./room.api";
+import { getApiErrorMessage } from "@/lib/api";
 
 export const useDeleteRoom = () => {
-
     const queryClient = useQueryClient();
 
-    const mutation = useMutation({
-        mutationFn: async (roomId: string) => {
-            const res = await axiosClient.delete(`/room/${roomId}`);
-            const data = res.data.data;
-            console.log(data);
-            return data;
-        },
-        onSuccess: () => {
-            toast.success("Room deleted successfully");
+    return useMutation({
+        mutationFn: deleteRoom,
+        onSuccess: (deleted) => {
             queryClient.invalidateQueries({ queryKey: ["rooms"] });
+            toast.success(`Room "${deleted.name}" deleted`);
         },
-        onError: (error: AxiosError<{ message: string }>) => {
-            console.log(error);
-            const errorMessage = error?.response?.data?.message || "Failed to delete room";
-            toast.error(errorMessage);
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, "Failed to delete room. Please try again."));
         },
     });
-
-    return mutation;
-}
+};

@@ -1,29 +1,19 @@
-import axiosClient from "@/utils/axios-client";
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { AxiosError } from "axios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { leaveRoom } from "./room.api";
+import { getApiErrorMessage } from "@/lib/api";
 
 export const useLeaveRoom = () => {
-
     const queryClient = useQueryClient();
 
-    const mutation = useMutation({
-        mutationFn: async (roomId: string) => {
-            const res = await axiosClient.patch(`/room/${roomId}/leave`);
-            const updatedRoom = res.data.data;
-            console.log(updatedRoom);
-            return res;
-        },
+    return useMutation({
+        mutationFn: leaveRoom,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["rooms"] });
-            toast.success("Room joined succeddfully")
+            toast.success("You left the room");
         },
-        onError: (error: AxiosError<{ message: string }>) => {
-            console.log(error);
-            const errorMessage = error?.response?.data?.message || "Failed to leave room";
-            toast.error(errorMessage);
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, "Failed to leave room. Please try again."));
         },
     });
-
-    return mutation;
-}
+};

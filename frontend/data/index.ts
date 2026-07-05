@@ -34,6 +34,24 @@ export const languages = [
     { value: 28, label: 'Python 3.10', color: 'from-green-400/20 to-green-300/20 text-green-200 border-green-400/40' },
 ];
 
+/** Maps file extensions to Judge0 language ids for local file uploads. */
+export const LANGUAGE_BY_EXTENSION: Record<string, number> = {
+    py: 28,
+    c: 1,
+    h: 1,
+    cpp: 2,
+    cc: 2,
+    cxx: 2,
+    hpp: 2,
+    java: 4,
+    cs: 22,
+    nim: 9,
+    c3: 3,
+    bsq: 11,
+};
+
+export const DEFAULT_LANGUAGE_ID = 28;
+
 export interface SubmissionRequest {
     source_code: string;
     language_id: number;

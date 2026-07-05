@@ -4,7 +4,8 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
-    AlertDialogDescription, AlertDialogFooter,
+    AlertDialogDescription,
+    AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle
 } from "@/components/ui/alert-dialog";
@@ -12,36 +13,38 @@ import {
 interface Props {
     title: string;
     description: string;
+    actionLabel?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onClick: () => void
+    onClick: () => void;
 }
 
 const Alert = ({
     title,
     description,
+    actionLabel,
     open,
     onOpenChange,
     onClick
 }: Props) => {
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
-            <AlertDialogContent className="bg-gray-900 border-gray-800">
+            <AlertDialogContent className="border-stone-100/10 bg-stone-950/95 backdrop-blur-xl">
                 <AlertDialogHeader>
-                    <AlertDialogTitle className="text-white font-bold">{title}</AlertDialogTitle>
-                    <AlertDialogDescription className="text-gray-400">
+                    <AlertDialogTitle className="font-bold text-stone-50">{title}</AlertDialogTitle>
+                    <AlertDialogDescription className="text-stone-400">
                         {description}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel className="bg-gray-800  text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <AlertDialogCancel className="border-stone-100/15 bg-stone-100/5 text-stone-200 hover:bg-stone-100/10 hover:text-white">
                         Cancel
                     </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={onClick}
-                        className="bg-red-600 hover:bg-red-700 text-white"
+                        className="bg-rose-600 text-white hover:bg-rose-500"
                     >
-                        {title}
+                        {actionLabel ?? title}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

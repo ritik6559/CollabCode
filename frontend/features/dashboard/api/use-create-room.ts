@@ -1,30 +1,19 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CreateRoomInput } from "../types";
-import axiosClient from "@/utils/axios-client";
-import { AxiosError } from "axios";
+import { createRoom } from "./room.api";
+import { getApiErrorMessage } from "@/lib/api";
 
 export const useCreateRoom = () => {
-
     const queryClient = useQueryClient();
 
-    const mutation = useMutation({
-        mutationFn: async (data: CreateRoomInput) => {
-            const res = await axiosClient.post("/room", data);
-            const room = res.data.data;
-            console.log(room);
-            return room;
-        },
-        onError: (error: AxiosError<{ message: string }>) => {
-            console.log(error);
-            const errorMessage = error?.response?.data?.message || "Failed to create room";
-            toast.error(errorMessage);
-        },
-        onSuccess: () => {
+    return useMutation({
+        mutationFn: createRoom,
+        onSuccess: (room) => {
             queryClient.invalidateQueries({ queryKey: ["rooms"] });
-            toast.success("Room created successfully.")
-        }
+            toast.success(`Room "${room.name}" created`);
+        },
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, "Failed to create room. Please try again."));
+        },
     });
-
-    return mutation;
-}
+};

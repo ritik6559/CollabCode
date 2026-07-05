@@ -13,7 +13,7 @@ import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react
 import { createUserSchema } from '@/features/auth/types';
 import { useRegisterUser } from '@/features/auth/api/use-register-user';
 import { getApiErrorMessage } from '@/lib/api';
-import FormErrorBanner from '@/features/auth/components/form-error';
+import FormErrorBanner from '@/components/form-error';
 
 const signUpSchema = createUserSchema
     .extend({

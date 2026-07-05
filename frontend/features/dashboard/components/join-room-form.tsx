@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -9,151 +9,131 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Users, Hash, LogIn } from 'lucide-react';
-import { JoinRoomInput, joinRoomSchema } from '../types';
-import { useJoinRoom } from '../api/use-join-room';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Hash, Loader2, LogIn } from "lucide-react";
+import { JoinRoomInput, joinRoomSchema } from "../types";
+import { useJoinRoom } from "../api/use-join-room";
+import { User } from "@/features/auth/types";
+import { getApiErrorMessage } from "@/lib/api";
+import FormErrorBanner from "@/components/form-error";
 
-const JoinRoomForm = () => {
-    const [open, setOpen] = useState(false);
-    const [isJoining, setIsJoining] = useState(false);
+interface JoinRoomFormProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    user: User;
+}
+
+const JoinRoomForm = ({ open, onOpenChange, user }: JoinRoomFormProps) => {
+    const router = useRouter();
 
     const form = useForm<JoinRoomInput>({
         resolver: zodResolver(joinRoomSchema),
         defaultValues: {
-            roomId: '',
+            roomId: "",
         },
     });
 
-    const { mutateAsync: joinRoom } = useJoinRoom();
+    const { mutateAsync: joinRoom, isPending, error, reset } = useJoinRoom();
+
+    const handleOpenChange = (next: boolean) => {
+        if (!next) {
+            form.reset();
+            reset();
+        }
+        onOpenChange(next);
+    };
 
     const onSubmit = async (data: JoinRoomInput) => {
-        setIsJoining(true);
         try {
-            const roomId = data.roomId;
-            await joinRoom( roomId );
-            form.reset();
-            setOpen(false);
-        } catch (error) {
-            console.error('Error joining room:', error);
-        } finally {
-            setIsJoining(false);
+            const room = await joinRoom(data.roomId.trim());
+            handleOpenChange(false);
+            router.push(`/editor/${room._id}?username=${encodeURIComponent(user.username)}`);
+        } catch {
+            // Error surfaces in the banner below and as a toast from the hook.
         }
     };
 
-
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-gray-700/50 bg-gray-800/30 text-gray-300 hover:bg-gray-700/40 hover:text-white hover:border-gray-600/50 transition-all duration-200 backdrop-blur-sm cursor-pointer"
-
-                >
-                    <Users className="h-4 w-4 mr-2" />
-                    Join Room
-                </Button>
-            </DialogTrigger>
-
-            <DialogContent className="sm:max-w-[450px] bg-gray-900/95 border border-gray-800/50 backdrop-blur-xl shadow-2xl">
-                <DialogHeader className="space-y-4 pb-6">
-                    <div className="flex items-center space-x-3">
-                        <div className="p-3 rounded-xl bg-gray-800/50 border border-gray-700/30">
-                            <LogIn className="h-6 w-6 text-green-300" />
-                        </div>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogContent className="border-stone-100/10 bg-stone-950/95 backdrop-blur-xl sm:max-w-[440px]">
+                <DialogHeader>
+                    <div className="flex items-center gap-3">
+                        <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 shadow-lg shadow-rose-500/25">
+                            <LogIn className="h-5 w-5 text-stone-950" />
+                        </span>
                         <div>
-                            <DialogTitle className="text-2xl font-bold text-white">
-                                Join Room
+                            <DialogTitle className="text-xl font-bold text-stone-50">
+                                Join a room
                             </DialogTitle>
-                            <DialogDescription className="text-gray-400 mt-1">
-                                Enter the room ID to join an existing coding session
+                            <DialogDescription className="text-stone-400">
+                                Paste the room ID a teammate shared with you
                             </DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        {/* Room ID Field */}
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-2">
+                        <FormErrorBanner
+                            message={error ? getApiErrorMessage(error, "Failed to join room. Please try again.") : null}
+                        />
+
                         <FormField
                             control={form.control}
                             name="roomId"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-gray-200 font-medium flex items-center space-x-2">
-                                        <Hash className="h-4 w-4 text-gray-400" />
-                                        <span>Room ID</span>
-                                    </FormLabel>
+                                    <FormLabel className="text-stone-300">Room ID</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            placeholder="Enter room ID (e.g., ABC123)"
-                                            {...field}
-                                            className="bg-gray-800/50 border-gray-700/50 text-white placeholder:text-gray-500 focus:border-green-500/50 focus:ring-green-500/20 backdrop-blur-sm transition-all duration-200 h-12 font-mono text-lg tracking-wider"
-                                            onChange={(e) => field.onChange(e.target.value)}
-                                        />
+                                        <div className="relative">
+                                            <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
+                                            <Input
+                                                placeholder="e.g. 665f1c2ab34d9c0012a4e7f9"
+                                                className="h-11 border-stone-100/10 bg-stone-900/60 pl-10 font-mono text-stone-100 placeholder:text-stone-600 focus-visible:border-amber-400/50 focus-visible:ring-amber-400/20"
+                                                {...field}
+                                            />
+                                        </div>
                                     </FormControl>
-                                    <FormDescription className="text-gray-500 text-sm">
-                                        Ask the room creator for the room ID to join their session
-                                    </FormDescription>
-                                    <FormMessage className="text-red-400" />
+                                    <FormMessage className="text-sm text-rose-300" />
                                 </FormItem>
                             )}
                         />
 
-                        <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-4">
-                            <div className="flex items-start space-x-3">
-                                <div className="p-2 rounded-lg bg-blue-500/20 border border-blue-500/30">
-                                    <Users className="h-4 w-4 text-blue-300" />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-medium text-gray-200 mb-1">
-                                        Joining a Room
-                                    </h4>
-                                    <p className="text-xs text-gray-400 leading-relaxed">
-                                        Once you join, you&apos;ll be able to collaborate in real-time with other participants in the coding session.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <DialogFooter className="pt-6 border-t border-gray-800/30">
+                        <DialogFooter>
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => setOpen(false)}
-                                className="bg-gray-800/50 border-gray-700/50 text-gray-300 hover:bg-gray-700/50 hover:text-white hover:border-gray-600/50 transition-all duration-200 backdrop-blur-sm"
+                                onClick={() => handleOpenChange(false)}
+                                className="border-stone-100/15 bg-stone-100/5 text-stone-200 hover:bg-stone-100/10 hover:text-white"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={isJoining}
-                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 transition-all duration-200 min-w-[120px]"
+                                disabled={isPending}
+                                className="bg-gradient-to-r from-amber-400 to-orange-500 font-semibold text-stone-950 shadow-lg shadow-orange-500/25 hover:from-amber-300 hover:to-orange-400"
                             >
-                                {isJoining ? (
-                                    <div className="flex items-center space-x-2">
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        <span>Joining...</span>
-                                    </div>
+                                {isPending ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Joining…
+                                    </>
                                 ) : (
-                                    <div className="flex items-center space-x-2">
-                                        <LogIn className="h-4 w-4" />
-                                        <span>Join Room</span>
-                                    </div>
+                                    <>
+                                        <LogIn className="mr-1 h-4 w-4" />
+                                        Join room
+                                    </>
                                 )}
                             </Button>
                         </DialogFooter>
@@ -162,6 +142,6 @@ const JoinRoomForm = () => {
             </DialogContent>
         </Dialog>
     );
-}
+};
 
 export default JoinRoomForm;
