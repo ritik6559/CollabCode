@@ -13,5 +13,8 @@ export const useGetCurrentUser = () => {
         queryFn: getCurrentUser,
         retry: false,
         staleTime: 5 * 60 * 1000,
+        // Auth state only changes through login/logout, which update
+        // the cache directly — no need to refetch on window focus.
+        refetchOnWindowFocus: false,
     });
 };
