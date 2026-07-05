@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gradient-to-br from-black via-gray-900 to-black `}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[#0c0a09]`}
       >
         <QueryProvider>
             <Toaster closeButton />

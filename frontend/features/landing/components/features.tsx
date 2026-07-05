@@ -1,51 +1,94 @@
-import React from 'react';
-import {Clock, Target, Users, Zap} from "lucide-react";
+"use client";
+
+import React from "react";
+import { Users, Zap, Share2, ShieldCheck, Code2, Gauge } from "lucide-react";
+
+const features = [
+    {
+        icon: Users,
+        title: "Real-time collaboration",
+        description:
+            "Two developers, one file. Every keystroke syncs instantly over WebSockets with live presence — perfect for pair programming and interviews.",
+        className: "md:col-span-2",
+        accent: "from-amber-400 to-orange-500",
+    },
+    {
+        icon: Zap,
+        title: "Instant execution",
+        description:
+            "Run code in the browser and get program output, errors, and compile results in seconds.",
+        className: "",
+        accent: "from-orange-400 to-rose-500",
+    },
+    {
+        icon: Share2,
+        title: "One-click rooms",
+        description:
+            "Create a room, share the ID, and start coding together. No installs, no config.",
+        className: "",
+        accent: "from-rose-400 to-amber-500",
+    },
+    {
+        icon: ShieldCheck,
+        title: "Secure by default",
+        description:
+            "JWT auth over httpOnly cookies keeps sessions safe, so you can focus on the code — not the plumbing.",
+        className: "md:col-span-2",
+        accent: "from-teal-400 to-emerald-500",
+    },
+];
 
 const Features = () => {
     return (
-        <section id="features" className="container mx-auto px-4 py-20">
-            <div className="text-center mb-16">
-                <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
-                    Why Choose <span className="bg-gradient-to-r from-gray-400 to-white bg-clip-text text-transparent">CollabCode</span>?
+        <section id="features" className="container mx-auto px-4 py-24">
+            <div className="mx-auto mb-16 max-w-2xl text-center">
+                <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-stone-100/10 bg-stone-900/50 px-4 py-1.5 text-xs font-medium text-stone-300">
+                    <Code2 className="h-3.5 w-3.5 text-amber-300" />
+                    Everything you need to code together
+                </span>
+                <h2 className="text-4xl font-bold tracking-tight text-stone-50 lg:text-5xl">
+                    Built for the way{" "}
+                    <span className="lp-gradient-text">developers collaborate</span>
                 </h2>
-                <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                    Experience the future of collaborative coding with our comprehensive platform designed for modern developers.
-                </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-                {[
-                    {
-                        icon: Users,
-                        title: "Real-time Collaboration",
-                        description: "Code together with peers in real-time, share ideas, and learn from each other in an interactive environment with live cursors and instant synchronization."
-                    },
-                    {
-                        icon: Zap,
-                        title: "Instant Code Execution",
-                        description: "Run your code directly in the browser with support for multiple programming languages. Get instant feedback with program output, errors, and compilation results."
-                    },
-                    {
-                        icon: Target,
-                        title: "Interactive Learning",
-                        description: "Practice algorithms and data structures with guided tutorials, instant feedback, and comprehensive explanations that adapt to your learning pace."
-                    },
-                    {
-                        icon: Clock,
-                        title: "Time-based Challenges",
-                        description: "Test your skills with timed coding challenges, compete with other developers, and track your progress with detailed analytics and leaderboards."
-                    }
-                ].map((feature, index) => (
-                    <div key={index} className="group bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-xl p-8 hover:border-gray-500/40 hover:bg-gray-800/50 transition-all duration-300 hover:scale-105">
-                        <div className="w-12 h-12 bg-gradient-to-r from-gray-600/20 to-gray-800/20 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <feature.icon className="h-6 w-6 text-gray-400" />
+            <div className="grid gap-5 md:grid-cols-3">
+                {features.map((feature) => (
+                    <div
+                        key={feature.title}
+                        className={`lp-card group rounded-2xl p-7 ${feature.className}`}
+                    >
+                        <div
+                            className={`mb-5 grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br ${feature.accent} shadow-lg transition-transform group-hover:scale-110`}
+                        >
+                            <feature.icon className="h-6 w-6 text-stone-950" />
                         </div>
-                        <h3 className="text-xl font-semibold text-white mb-4 group-hover:text-gray-100 transition-colors">
+                        <h3 className="mb-2 text-xl font-semibold text-stone-50">
                             {feature.title}
                         </h3>
-                        <p className="text-gray-400 group-hover:text-gray-300 transition-colors leading-relaxed">
+                        <p className="leading-relaxed text-stone-400">
                             {feature.description}
                         </p>
+                    </div>
+                ))}
+            </div>
+
+            {/* metric strip */}
+            <div className="mt-5 grid gap-5 sm:grid-cols-3">
+                {[
+                    { icon: Gauge, stat: "Sub-second", label: "code execution" },
+                    { icon: Users, stat: "Live cursors", label: "see edits as they happen" },
+                    { icon: Zap, stat: "Zero setup", label: "runs entirely in-browser" },
+                ].map((item) => (
+                    <div
+                        key={item.label}
+                        className="flex items-center gap-4 rounded-2xl border border-stone-100/10 bg-stone-900/40 px-6 py-5"
+                    >
+                        <item.icon className="h-6 w-6 shrink-0 text-amber-300" />
+                        <div>
+                            <p className="font-semibold text-stone-50">{item.stat}</p>
+                            <p className="text-sm text-stone-400">{item.label}</p>
+                        </div>
                     </div>
                 ))}
             </div>
