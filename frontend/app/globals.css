@@ -116,8 +116,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Keep anchored sections clear of the sticky h-16 header */
+  section[id] {
+    scroll-margin-top: 5rem;
   }
 }
 
@@ -295,6 +302,7 @@
 .lp-shine:hover::after { left: 130%; }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .lp-aurora span,
   .lp-gradient-text,
   .lp-reveal,

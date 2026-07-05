@@ -1,24 +1,17 @@
 'use client'
 
-import axiosClient from '@/utils/axios-client'
-import { useQuery } from '@tanstack/react-query'
-import { toast } from 'sonner';
+import { useQuery } from "@tanstack/react-query";
+import { getCurrentUser } from "./auth.api";
 
+/**
+ * Fetches the authenticated user. Resolves to null when logged out
+ * (a 401 is expected there, so no error toast is shown for it).
+ */
 export const useGetCurrentUser = () => {
-    const query = useQuery({
-        queryKey: ['user'],
-        queryFn: async () => {
-            try{
-                const res = await axiosClient.get("/auth/me");
-                return res.data.data;
-            } catch (e) {
-                console.log(e);
-                toast.error("Failed to fetch user");
-                return null;
-            }
-        },
-        retry: 1
+    return useQuery({
+        queryKey: ["user"],
+        queryFn: getCurrentUser,
+        retry: false,
+        staleTime: 5 * 60 * 1000,
     });
-
-    return query;
-}
+};

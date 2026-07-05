@@ -1,27 +1,20 @@
-import axiosClient from "@/utils/axios-client"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { AxiosError } from "axios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { logoutUser } from "./auth.api";
+import { getApiErrorMessage } from "@/lib/api";
 
 export const useLogoutUser = () => {
-
     const queryClient = useQueryClient();
 
-    const mutation = useMutation({
-        mutationFn: async () => {
-            const res = await axiosClient.delete('/auth/logout');
-            console.log(res.data.data);
-        },
+    return useMutation({
+        mutationFn: logoutUser,
         onSuccess: () => {
-            toast.success("Successfully Logged out");
-            queryClient.invalidateQueries({ queryKey: ['user'] });
+            queryClient.setQueryData(["user"], null);
+            queryClient.invalidateQueries({ queryKey: ["user"] });
+            toast.success("Successfully logged out");
         },
-        onError: (error: AxiosError<{ message: string }>) => {
-            console.log(error);
-            const errorMessage = error?.response?.data?.message || "Failed to logout";
-            toast.error(errorMessage);
-        }
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, "Failed to log out. Please try again."));
+        },
     });
-
-    return mutation;
-}
+};

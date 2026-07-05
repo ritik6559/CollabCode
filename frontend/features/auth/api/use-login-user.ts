@@ -1,27 +1,19 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { LoginUserInput } from "../types"
-import axiosClient from "@/utils/axios-client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AxiosError } from "axios";
+import { loginUser } from "./auth.api";
+import { getApiErrorMessage } from "@/lib/api";
 
 export const useLoginUser = () => {
     const queryClient = useQueryClient();
 
-    const mutation = useMutation({
-        mutationFn: async (user: LoginUserInput) => {
-            const res = await axiosClient.post("/auth/login", user);
-            return res.data.data;
+    return useMutation({
+        mutationFn: loginUser,
+        onSuccess: (user) => {
+            queryClient.setQueryData(["user"], user);
+            toast.success(`Welcome back, ${user.username}!`);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['user'] });
-            toast.success("Login successful")
-        },
-        onError: (error: AxiosError<{ message: string }>) => {
-            console.log(error);
-            const errorMessage = error?.response?.data?.message || "Failed to login user";
-            toast.error(errorMessage);
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, "Failed to sign in. Please try again."));
         },
     });
-
-    return mutation;
-}
+};
