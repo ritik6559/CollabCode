@@ -5,8 +5,10 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
 import { initDB } from "./db";
+import { CLIENT_URL } from "./utils/config";
 import { errorHandler } from "./common/error.middleware";
 import authRoute from "./modules/auth/auth.routes";
+import { authenticateSocket } from "./modules/auth/auth.middleware";
 import roomRoute from "./modules/room/room.routes";
 import { registerRoomHandlers } from "./modules/room/room.gateway";
 
@@ -14,9 +16,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:3000"],
-        methods: ['GET', 'POST'],
+        origin: [CLIENT_URL],
+        credentials: true,
     },
+    // Cap socket payloads — content sync is limited to 256 KB anyway
+    maxHttpBufferSize: 1e6,
 });
 const PORT = process.env.PORT || 8000;
 
@@ -30,7 +34,7 @@ initDB()
 // Bumped from the 100kb default so file uploads (max 256 KB) fit in one request
 app.use(express.json({ limit: "1mb" }));
 app.use(cors({
-    origin: ["http://localhost:3000"],
+    origin: [CLIENT_URL],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -42,9 +46,9 @@ app.use("/api/room", roomRoute);
 
 app.use(errorHandler);
 
-io.on('connection', (socket) => {
-    console.log("Socket connected: ", socket.id);
+io.use(authenticateSocket);
 
+io.on('connection', (socket) => {
     registerRoomHandlers(io, socket);
 });
 

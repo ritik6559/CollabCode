@@ -40,7 +40,8 @@ const RoomCard = ({ room, user, onDelete, onLeave }: RoomCardProps) => {
     const FileIcon = isDoc ? FileText : FileCode2;
 
     const openRoom = () => {
-        router.push(`/editor/${room._id}?username=${encodeURIComponent(user.username)}`);
+        const base = isDoc ? "/doc" : "/editor";
+        router.push(`${base}/${room._id}?username=${encodeURIComponent(user.username)}`);
     };
 
     const copyRoomId = async () => {

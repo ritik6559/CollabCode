@@ -7,11 +7,12 @@ import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Loader, PanelLeftIcon, Play } from "lucide-react";
+import { Download, Loader, PanelLeftIcon, Play } from "lucide-react";
 import { ACTIONS } from "@/lib/utils";
 import { toast } from "sonner";
 import { useCodeExecution } from "@/hooks/use-code-execution";
-import { LANGUAGES } from "@/data";
+import { EXTENSION_BY_LANGUAGE, LANGUAGES } from "@/data";
+import { downloadFile, safeFileName } from "@/lib/download";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +108,11 @@ const EditorPage = () => {
             }
         };
 
+        const handleRoomError = ({ message }: { message: string }) => {
+            toast.error(message || "Room connection error");
+            router.push("/home");
+        };
+
         const joinTimeout = setTimeout(() => {
             console.warn("Room join timeout - proceeding anyway");
             setIsSocketReady(true);
@@ -127,6 +133,7 @@ const EditorPage = () => {
         socket.on("connect_error", handleConnectError);
         socket.on(ACTIONS.USER_JOINED, handleUserJoined);
         socket.on(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
+        socket.on(ACTIONS.ROOM_ERROR, handleRoomError);
         socket.on("connect", join);
 
         socket.emit(ACTIONS.ROOM_JOIN, {
@@ -146,6 +153,7 @@ const EditorPage = () => {
             socket.off("connect_error", handleConnectError);
             socket.off(ACTIONS.USER_JOINED, handleUserJoined);
             socket.off(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
+            socket.off(ACTIONS.ROOM_ERROR, handleRoomError);
             socket.off("connect", join);
             socket.disconnect();
         };
@@ -170,6 +178,12 @@ const EditorPage = () => {
             await navigator.clipboard.writeText(roomId);
             toast.success("Room ID copied!");
         }
+    };
+
+    const handleDownload = () => {
+        const extension = EXTENSION_BY_LANGUAGE[languageId] ?? "txt";
+        downloadFile(`${safeFileName(room?.name ?? "code")}.${extension}`, code, "text/plain;charset=utf-8");
+        toast.success("Code downloaded");
     };
 
     const handleCodeChange = (value: string) => {
@@ -221,18 +235,28 @@ const EditorPage = () => {
                                 <div>
                                     <p className="text-sm text-gray-400">Collaborative coding environment</p>
                                 </div>
-                                <Button
-                                    onClick={handleSubmit}
-                                    disabled={loading}
-                                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 cursor-pointer"
-                                >
-                                    {loading ? (
-                                        <Loader className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Play className="w-4 h-4" />
-                                    )}
-                                    Run Code
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        onClick={handleDownload}
+                                        variant="outline"
+                                        className="border-gray-600/50 bg-gray-800/50 text-gray-200 hover:bg-gray-700/50 hover:text-white flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Download
+                                    </Button>
+                                    <Button
+                                        onClick={handleSubmit}
+                                        disabled={loading}
+                                        className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 cursor-pointer"
+                                    >
+                                        {loading ? (
+                                            <Loader className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Play className="w-4 h-4" />
+                                        )}
+                                        Run Code
+                                    </Button>
+                                </div>
                             </div>
                         </header>
 

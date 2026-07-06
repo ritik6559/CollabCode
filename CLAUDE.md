@@ -38,15 +38,20 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 PORT=8000
 MONGODB_URI=your-mongodb-connection-string
 JWT_SECRET=your-secret-key
+CLIENT_URL=http://localhost:3000   # optional, defaults to localhost:3000
 ```
 
 ## Architecture
 
 ### Real-time Collaboration Flow
-1. The frontend gets a shared Socket.IO client from `frontend/context/SocketProvider.tsx`; the editor page joins a room via `socket.emit(ACTIONS.ROOM_JOIN, ...)`
-2. `CODE_CHANGE` events are relayed to the other peer via `socket.to(room).emit(...)` in `backend/src/modules/room/room.gateway.ts` — the server holds no document state
-3. The typing client persists its own code via the debounced `useSaveCode` hook (`PATCH /api/room/:roomId/update`); the receiving client only applies the change
-4. Socket.IO event names (`ROOM_JOIN`, `USER_JOINED`, `CODE_CHANGE`) are defined in `backend/src/modules/room/room.events.ts` and mirrored as `ACTIONS` in `frontend/lib/utils.ts`
+1. The frontend gets a shared Socket.IO client from `frontend/context/SocketProvider.tsx` (created with `withCredentials: true` so the httpOnly auth cookie rides the handshake); the editor/doc pages join a room via `socket.emit(ACTIONS.ROOM_JOIN, ...)`
+2. Sockets are authenticated before any handler runs: `authenticateSocket` (`backend/src/modules/auth/auth.middleware.ts`) verifies the JWT from the cookie header and sets `socket.data.userId`; `ROOM_JOIN` then checks DB membership (admin or joinedUser) before `socket.join`, emitting `ROOM_ERROR` on failure
+3. `CODE_CHANGE` (code rooms) and `DOC_CHANGE` (doc rooms) are relayed via `socket.to(room).emit(...)` in `backend/src/modules/room/room.gateway.ts` — only for rooms the socket has joined, size-capped at 256 KB (`MAX_CONTENT_LENGTH` in `room.schema.ts`); the server holds no document state
+4. The typing client persists its own content via the debounced `useSaveCode` hook (`PATCH /api/room/:roomId/update`); the receiving client only applies the change
+5. Socket.IO event names (`ROOM_JOIN`, `USER_JOINED`, `USER_LEFT`, `CODE_CHANGE`, `DOC_CHANGE`, `ROOM_ERROR`) are defined in `backend/src/modules/room/room.events.ts` and mirrored as `ACTIONS` in `frontend/lib/utils.ts`
+
+### Room Types
+Rooms have a `type` field: `"code"` (CodeMirror editor at `/editor/[roomId]`, Judge0 execution) or `"doc"` (TipTap rich-text editor at `/doc/[roomId]` with formatting toolbar and .doc/.html/.txt export). `POST /api/room` accepts optional `code` (initial content) and `language` (required for code rooms only — enforced via Zod refine). Both room types store their content in the `code` field and sync over their own socket event.
 
 ### Code Execution Pipeline
 - Frontend submits code via `POST /api/submit` (Next.js route handler), which returns a Judge0 token
@@ -80,7 +85,7 @@ Rooms are limited to 2 users (admin + one joined user), enforced in `backend/src
 
 ## Key Notes
 
-- The `ACTIONS` constants in `backend/src/utils/actions.ts` must stay in sync with the `ACTIONS` object in `frontend/lib/utils.ts`
-- CORS is currently restricted to `http://localhost:3000` in `backend/src/index.ts` — update both the Express CORS config and the Socket.IO `cors` option when changing allowed origins
+- The `ACTIONS` constants in `backend/src/modules/room/room.events.ts` must stay in sync with the `ACTIONS` object in `frontend/lib/utils.ts`
+- Allowed CORS origin comes from the `CLIENT_URL` env var (used by both the Express CORS config and the Socket.IO `cors` option in `backend/src/index.ts`)
 - The editor page disconnects the shared socket on unmount and reconnects it on mount (`socket.connect()`); listeners are registered/removed symmetrically in a single effect
 - The editor always uses `@codemirror/lang-javascript` extension regardless of the selected `languageId`; the language selection only affects Judge0 submission

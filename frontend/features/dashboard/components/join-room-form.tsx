@@ -58,7 +58,8 @@ const JoinRoomForm = ({ open, onOpenChange, user }: JoinRoomFormProps) => {
         try {
             const room = await joinRoom(data.roomId.trim());
             handleOpenChange(false);
-            router.push(`/editor/${room._id}?username=${encodeURIComponent(user.username)}`);
+            const base = room.type === "doc" ? "/doc" : "/editor";
+            router.push(`${base}/${room._id}?username=${encodeURIComponent(user.username)}`);
         } catch {
             // Error surfaces in the banner below and as a toast from the hook.
         }

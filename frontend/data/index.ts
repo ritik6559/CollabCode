@@ -52,6 +52,19 @@ export const LANGUAGE_BY_EXTENSION: Record<string, number> = {
 
 export const DEFAULT_LANGUAGE_ID = 28;
 
+/** Preferred file extension per Judge0 language id, for code downloads. */
+export const EXTENSION_BY_LANGUAGE: Record<number, string> = {
+    11: "bsq",
+    3: "c3",
+    1: "c",
+    2: "cpp",
+    22: "cs",
+    4: "java",
+    9: "nim",
+    26: "py",
+    28: "py",
+};
+
 export interface SubmissionRequest {
     source_code: string;
     language_id: number;

@@ -26,7 +26,13 @@ interface SocketProviderProps {
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const socket = useMemo(
     () => {
-      return io(process.env.NEXT_PUBLIC_BACKEND_URL!);
+      return io(process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000", {
+        // Send the httpOnly auth cookie with the handshake — the server
+        // rejects unauthenticated sockets before any handler runs.
+        withCredentials: true,
+        reconnectionAttempts: 5,
+        timeout: 10000,
+      });
     },
     []
   );

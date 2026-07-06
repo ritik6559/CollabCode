@@ -31,13 +31,25 @@ const EditorSidebar = ({ room, onLeaveRoom, onCopyRoomId }: EditorSidebarProps) 
         []
     );
 
+    const handleUserLeft = useCallback(
+        ({ username }: { id: string; username?: string }) => {
+            setRemoteSocketId(null);
+            if (username) {
+                toast.info(`${username} left the room`);
+            }
+        },
+        []
+    );
+
     useEffect(() => {
         socket.on(ACTIONS.USER_JOINED, handleUserJoined);
+        socket.on(ACTIONS.USER_LEFT, handleUserLeft);
 
         return () => {
             socket.off(ACTIONS.USER_JOINED, handleUserJoined);
+            socket.off(ACTIONS.USER_LEFT, handleUserLeft);
         };
-    }, [socket, handleUserJoined]);
+    }, [socket, handleUserJoined, handleUserLeft]);
 
     const handleCopyRoomId = async () => {
         try {
