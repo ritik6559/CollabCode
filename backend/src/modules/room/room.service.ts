@@ -4,11 +4,13 @@ import { CreateRoomInput } from "./room.schema";
 
 const USER_PUBLIC_FIELDS = "_id username email";
 
-export const createRoom = async (adminId: string, { name, description, language }: CreateRoomInput) => {
+export const createRoom = async (adminId: string, { name, description, type, language, code }: CreateRoomInput) => {
     return Room.create({
         name,
         description: description ?? "",
+        type,
         language,
+        code: code ?? "",
         admin: adminId,
     });
 };

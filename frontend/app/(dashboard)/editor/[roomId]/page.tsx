@@ -75,7 +75,7 @@ const EditorPage = () => {
             return;
         }
         hasHydrated.current = true;
-        setLanguageId(room.language);
+        setLanguageId(room.language ?? 28);
         setCode(room.code || '');
     }, [room]);
 

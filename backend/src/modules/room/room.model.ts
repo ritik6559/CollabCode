@@ -14,12 +14,18 @@ const roomSchema = new mongoose.Schema({
     description: {
         type: String,
     },
+    type: {
+        type: String,
+        enum: ["code", "doc"],
+        default: "code",
+    },
     code: {
         type: String,
     },
+    // Judge0 language id — only meaningful for "code" rooms
+    // (requiredness is enforced by the Zod schema, not the model)
     language: {
         type: Number,
-        required: true,
     },
     joinedUser: {
         type: mongoose.Schema.Types.ObjectId,

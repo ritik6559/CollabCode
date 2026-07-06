@@ -8,11 +8,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { FileCode2, FileText, Hash, Plus, Upload } from "lucide-react";
 
 interface StartNewSectionProps {
     onNewCodeRoom: () => void;
+    onNewDocRoom: () => void;
     onUploadFile: () => void;
     onJoinRoom: () => void;
 }
@@ -22,11 +22,10 @@ interface TemplateCard {
     hint: string;
     icon: React.ElementType;
     accent: string;
-    onClick?: () => void;
-    disabled?: boolean;
+    onClick: () => void;
 }
 
-const StartNewSection = ({ onNewCodeRoom, onUploadFile, onJoinRoom }: StartNewSectionProps) => {
+const StartNewSection = ({ onNewCodeRoom, onNewDocRoom, onUploadFile, onJoinRoom }: StartNewSectionProps) => {
     const templates: TemplateCard[] = [
         {
             label: "Blank code room",
@@ -36,18 +35,18 @@ const StartNewSection = ({ onNewCodeRoom, onUploadFile, onJoinRoom }: StartNewSe
             onClick: onNewCodeRoom,
         },
         {
+            label: "Doc file",
+            hint: "Collaborative document",
+            icon: FileText,
+            accent: "from-lime-400 to-emerald-500",
+            onClick: onNewDocRoom,
+        },
+        {
             label: "Upload a file",
             hint: "From your device",
             icon: Upload,
-            accent: "from-teal-400 to-emerald-500",
+            accent: "from-sky-400 to-blue-500",
             onClick: onUploadFile,
-        },
-        {
-            label: "Doc file",
-            hint: "Coming soon",
-            icon: FileText,
-            accent: "from-stone-500 to-stone-600",
-            disabled: true,
         },
         {
             label: "Join with ID",
@@ -85,20 +84,17 @@ const StartNewSection = ({ onNewCodeRoom, onUploadFile, onJoinRoom }: StartNewSe
                             Code file
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            disabled
-                            className="text-stone-500"
+                            onClick={onNewDocRoom}
+                            className="cursor-pointer text-stone-200 focus:bg-stone-800/80 focus:text-stone-50"
                         >
-                            <FileText className="mr-2 h-4 w-4" />
+                            <FileText className="mr-2 h-4 w-4 text-emerald-300" />
                             Doc file
-                            <Badge className="ml-auto border-none bg-stone-800 text-[10px] text-stone-400">
-                                Soon
-                            </Badge>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={onUploadFile}
                             className="cursor-pointer text-stone-200 focus:bg-stone-800/80 focus:text-stone-50"
                         >
-                            <Upload className="mr-2 h-4 w-4 text-teal-300" />
+                            <Upload className="mr-2 h-4 w-4 text-sky-300" />
                             Upload from device
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -111,17 +107,10 @@ const StartNewSection = ({ onNewCodeRoom, onUploadFile, onJoinRoom }: StartNewSe
                     <button
                         key={template.label}
                         onClick={template.onClick}
-                        disabled={template.disabled}
-                        className={`lp-card group rounded-2xl p-5 text-left ${
-                            template.disabled
-                                ? "cursor-not-allowed opacity-50 hover:translate-y-0 hover:border-stone-100/[0.08] hover:shadow-none"
-                                : "cursor-pointer"
-                        }`}
+                        className="lp-card group cursor-pointer rounded-2xl p-5 text-left"
                     >
                         <span
-                            className={`mb-4 grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br ${template.accent} shadow-lg transition-transform ${
-                                template.disabled ? "" : "group-hover:scale-110"
-                            }`}
+                            className={`mb-4 grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br ${template.accent} shadow-lg transition-transform group-hover:scale-110`}
                         >
                             <template.icon className="h-5 w-5 text-stone-950" />
                         </span>

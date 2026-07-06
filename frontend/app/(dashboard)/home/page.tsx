@@ -11,11 +11,10 @@ import EmptyCard from "@/features/dashboard/components/empty-card";
 import StartNewSection from "@/features/dashboard/components/start-new-section";
 import CreateRoomForm from "@/features/dashboard/components/create-room-form";
 import JoinRoomForm from "@/features/dashboard/components/join-room-form";
-import { Room } from "@/features/dashboard/types";
+import { Room, RoomType } from "@/features/dashboard/types";
 import { useGetUserRooms } from "@/features/dashboard/api/use-get-user-rooms";
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 import { useCreateRoom } from "@/features/dashboard/api/use-create-room";
-import { useUpdateCode } from "@/features/dashboard/api/use-update-code";
 import { useDeleteRoom } from "@/features/dashboard/api/use-delete-room";
 import { useLeaveRoom } from "@/features/dashboard/api/use-leave-room";
 import { getApiErrorMessage } from "@/lib/api";
@@ -35,7 +34,7 @@ const Page = () => {
     const [search, setSearch] = useState("");
     const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("all");
 
-    const [createOpen, setCreateOpen] = useState(false);
+    const [createType, setCreateType] = useState<RoomType | null>(null);
     const [joinOpen, setJoinOpen] = useState(false);
 
     const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
@@ -48,7 +47,6 @@ const Page = () => {
     const { data: rooms, isLoading, error, refetch, isRefetching } = useGetUserRooms();
 
     const { mutateAsync: createRoom } = useCreateRoom();
-    const { mutateAsync: updateCode } = useUpdateCode();
     const { mutateAsync: deleteRoom } = useDeleteRoom();
     const { mutateAsync: leaveRoom } = useLeaveRoom();
 
@@ -83,15 +81,13 @@ const Page = () => {
             const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
             const language = LANGUAGE_BY_EXTENSION[extension] ?? DEFAULT_LANGUAGE_ID;
 
-            const room = await createRoom({
+            await createRoom({
                 name: file.name,
                 description: "Uploaded from device",
+                type: "code",
                 language,
+                code,
             });
-
-            if (code.trim()) {
-                await updateCode({ roomId: room._id, code });
-            }
         } catch {
             // Hooks already toast the specific API error.
         } finally {
@@ -128,7 +124,8 @@ const Page = () => {
 
                 <main className="mx-auto max-w-7xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
                     <StartNewSection
-                        onNewCodeRoom={() => setCreateOpen(true)}
+                        onNewCodeRoom={() => setCreateType("code")}
+                        onNewDocRoom={() => setCreateType("doc")}
                         onUploadFile={() => fileInputRef.current?.click()}
                         onJoinRoom={() => setJoinOpen(true)}
                     />
@@ -188,7 +185,7 @@ const Page = () => {
                             rooms && rooms.length > 0 ? (
                                 <EmptyCard variant="no-results" searchTerm={search} />
                             ) : (
-                                <EmptyCard onCreate={() => setCreateOpen(true)} />
+                                <EmptyCard onCreate={() => setCreateType("code")} />
                             )
                         ) : (
                             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -223,7 +220,12 @@ const Page = () => {
                 </div>
             )}
 
-            <CreateRoomForm open={createOpen} onOpenChange={setCreateOpen} />
+            <CreateRoomForm
+                key={createType ?? "closed"}
+                open={createType !== null}
+                onOpenChange={(open) => !open && setCreateType(null)}
+                roomType={createType ?? "code"}
+            />
             <JoinRoomForm open={joinOpen} onOpenChange={setJoinOpen} user={user} />
 
             <Alert

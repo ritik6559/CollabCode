@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
     Copy,
     FileCode2,
+    FileText,
     LogOut,
     MoreVertical,
     SquareArrowOutUpRight,
@@ -35,6 +36,8 @@ interface RoomCardProps {
 const RoomCard = ({ room, user, onDelete, onLeave }: RoomCardProps) => {
     const router = useRouter();
     const isOwner = user._id === room.admin._id;
+    const isDoc = room.type === "doc";
+    const FileIcon = isDoc ? FileText : FileCode2;
 
     const openRoom = () => {
         router.push(`/editor/${room._id}?username=${encodeURIComponent(user.username)}`);
@@ -55,7 +58,7 @@ const RoomCard = ({ room, user, onDelete, onLeave }: RoomCardProps) => {
                     </pre>
                 ) : (
                     <div className="flex h-full items-center justify-center">
-                        <FileCode2 className="h-10 w-10 text-stone-800" />
+                        <FileIcon className="h-10 w-10 text-stone-800" />
                     </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 to-transparent" />
@@ -71,8 +74,14 @@ const RoomCard = ({ room, user, onDelete, onLeave }: RoomCardProps) => {
 
             {/* Info row */}
             <div className="flex items-start gap-3 p-4">
-                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-amber-400/20 bg-amber-400/10">
-                    <FileCode2 className="h-4.5 w-4.5 text-amber-300" />
+                <span
+                    className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg border ${
+                        isDoc
+                            ? "border-emerald-400/20 bg-emerald-400/10"
+                            : "border-amber-400/20 bg-amber-400/10"
+                    }`}
+                >
+                    <FileIcon className={`h-4.5 w-4.5 ${isDoc ? "text-emerald-300" : "text-amber-300"}`} />
                 </span>
 
                 <div className="min-w-0 flex-1">
@@ -80,7 +89,9 @@ const RoomCard = ({ room, user, onDelete, onLeave }: RoomCardProps) => {
                         {room.name}
                     </h3>
                     <p className="mt-0.5 truncate text-xs text-stone-500">
-                        {LANGUAGES[room.language as keyof typeof LANGUAGES] ?? "Unknown"}
+                        {isDoc
+                            ? "Doc"
+                            : LANGUAGES[room.language as keyof typeof LANGUAGES] ?? "Unknown"}
                         {" · "}
                         {isOwner ? "Owned by you" : `Owned by ${room.admin.username}`}
                         {" · "}

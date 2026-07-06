@@ -28,8 +28,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileCode2, Loader2, Plus } from "lucide-react";
-import { CreateRoomInput, createRoomSchema } from "../types";
+import { FileCode2, FileText, Loader2, Plus } from "lucide-react";
+import { CreateRoomInput, createRoomSchema, RoomType } from "../types";
 import { useCreateRoom } from "../api/use-create-room";
 import { languages } from "@/data";
 import { getApiErrorMessage } from "@/lib/api";
@@ -38,18 +38,22 @@ import FormErrorBanner from "@/components/form-error";
 interface CreateRoomFormProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    roomType: RoomType;
 }
 
 const inputClasses =
     "border-stone-100/10 bg-stone-900/60 text-stone-100 placeholder:text-stone-500 focus-visible:border-amber-400/50 focus-visible:ring-amber-400/20";
 
-const CreateRoomForm = ({ open, onOpenChange }: CreateRoomFormProps) => {
+const CreateRoomForm = ({ open, onOpenChange, roomType }: CreateRoomFormProps) => {
+    const isDoc = roomType === "doc";
+
     const form = useForm<CreateRoomInput>({
         resolver: zodResolver(createRoomSchema),
         defaultValues: {
             name: "",
             description: "",
-            language: 28,
+            type: roomType,
+            language: isDoc ? undefined : 28,
         },
     });
 
@@ -77,15 +81,27 @@ const CreateRoomForm = ({ open, onOpenChange }: CreateRoomFormProps) => {
             <DialogContent className="border-stone-100/10 bg-stone-950/95 backdrop-blur-xl sm:max-w-[480px]">
                 <DialogHeader>
                     <div className="flex items-center gap-3">
-                        <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/25">
-                            <FileCode2 className="h-5 w-5 text-stone-950" />
+                        <span
+                            className={`grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br shadow-lg ${
+                                isDoc
+                                    ? "from-lime-400 to-emerald-500 shadow-emerald-500/25"
+                                    : "from-amber-400 to-orange-500 shadow-orange-500/25"
+                            }`}
+                        >
+                            {isDoc ? (
+                                <FileText className="h-5 w-5 text-stone-950" />
+                            ) : (
+                                <FileCode2 className="h-5 w-5 text-stone-950" />
+                            )}
                         </span>
                         <div>
                             <DialogTitle className="text-xl font-bold text-stone-50">
-                                New code room
+                                {isDoc ? "New doc file" : "New code room"}
                             </DialogTitle>
                             <DialogDescription className="text-stone-400">
-                                A collaborative space for you and one teammate
+                                {isDoc
+                                    ? "A collaborative document for you and one teammate"
+                                    : "A collaborative space for you and one teammate"}
                             </DialogDescription>
                         </div>
                     </div>
@@ -102,10 +118,12 @@ const CreateRoomForm = ({ open, onOpenChange }: CreateRoomFormProps) => {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-stone-300">Room name</FormLabel>
+                                    <FormLabel className="text-stone-300">
+                                        {isDoc ? "Document name" : "Room name"}
+                                    </FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder="e.g. two-sum practice"
+                                            placeholder={isDoc ? "e.g. design notes" : "e.g. two-sum practice"}
                                             className={`h-11 ${inputClasses}`}
                                             {...field}
                                         />
@@ -115,37 +133,39 @@ const CreateRoomForm = ({ open, onOpenChange }: CreateRoomFormProps) => {
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="language"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-stone-300">Language</FormLabel>
-                                    <Select
-                                        onValueChange={(value) => field.onChange(Number(value))}
-                                        value={String(field.value)}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger className={`h-11 w-full ${inputClasses}`}>
-                                                <SelectValue placeholder="Select a language" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent className="border-stone-100/10 bg-stone-900/95 backdrop-blur-xl">
-                                            {languages.map((language) => (
-                                                <SelectItem
-                                                    key={language.value}
-                                                    value={String(language.value)}
-                                                    className="cursor-pointer text-stone-200 focus:bg-stone-800/80 focus:text-stone-50"
-                                                >
-                                                    {language.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage className="text-sm text-rose-300" />
-                                </FormItem>
-                            )}
-                        />
+                        {!isDoc && (
+                            <FormField
+                                control={form.control}
+                                name="language"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-stone-300">Language</FormLabel>
+                                        <Select
+                                            onValueChange={(value) => field.onChange(Number(value))}
+                                            value={field.value !== undefined ? String(field.value) : undefined}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger className={`h-11 w-full ${inputClasses}`}>
+                                                    <SelectValue placeholder="Select a language" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="border-stone-100/10 bg-stone-900/95 backdrop-blur-xl">
+                                                {languages.map((language) => (
+                                                    <SelectItem
+                                                        key={language.value}
+                                                        value={String(language.value)}
+                                                        className="cursor-pointer text-stone-200 focus:bg-stone-800/80 focus:text-stone-50"
+                                                    >
+                                                        {language.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage className="text-sm text-rose-300" />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
 
                         <FormField
                             control={form.control}
@@ -190,7 +210,7 @@ const CreateRoomForm = ({ open, onOpenChange }: CreateRoomFormProps) => {
                                 ) : (
                                     <>
                                         <Plus className="mr-1 h-4 w-4" />
-                                        Create room
+                                        {isDoc ? "Create doc" : "Create room"}
                                     </>
                                 )}
                             </Button>

@@ -27,7 +27,8 @@ initDB()
         process.exit(1);
     });
 
-app.use(express.json());
+// Bumped from the 100kb default so file uploads (max 256 KB) fit in one request
+app.use(express.json({ limit: "1mb" }));
 app.use(cors({
     origin: ["http://localhost:3000"],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
