@@ -1,23 +1,24 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { TextStyle, FontSize, FontFamily } from "@tiptap/extension-text-style";
 import TextAlign from "@tiptap/extension-text-align";
+import Collaboration, { isChangeOrigin } from "@tiptap/extension-collaboration";
+import CollaborationCaret from "@tiptap/extension-collaboration-caret";
+import * as Y from "yjs";
 import {
     Copy,
     Download,
     FileText,
     Loader,
     LogOut,
-    Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,11 +27,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ACTIONS } from "@/lib/utils";
 import { downloadFile, safeFileName } from "@/lib/download";
+import { base64ToUint8, pickCollabColor, uint8ToBase64 } from "@/lib/collab";
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 import { useGetRoomById } from "@/features/dashboard/api/use-get-room-by-id";
 import { useJoinRoom } from "@/features/dashboard/api/use-join-room";
 import useSaveCode from "@/features/dashboard/hooks/use-save-code";
 import { useSocket } from "@/context/SocketProvider";
+import { useCollabSession } from "@/hooks/use-collab-session";
+import CollabPresence from "@/components/collab-presence";
 import DocToolbar from "@/features/doc/components/doc-toolbar";
 
 const DocPage = () => {
@@ -41,37 +45,57 @@ const DocPage = () => {
     const currUsername = searchParams.get("username") || "Anonymous";
 
     const socket = useSocket();
-    const hasHydrated = useRef(false);
+    const hydratedDocRef = useRef<Y.Doc | null>(null);
 
     const [isSocketReady, setIsSocketReady] = useState(false);
-    const [peerOnline, setPeerOnline] = useState(false);
 
     const { data: user, isLoading: userLoading, error: userError } = useGetCurrentUser();
     const { data: room, isLoading: roomLoading, error: roomError } = useGetRoomById(roomId);
     const { mutateAsync: joinRoom } = useJoinRoom();
     const { debouncedSave, isSaving } = useSaveCode(roomId);
 
-    const editor = useEditor({
-        extensions: [
-            StarterKit,
-            TextStyle,
-            FontSize,
-            FontFamily,
-            TextAlign.configure({ types: ["heading", "paragraph"] }),
-        ],
-        content: "",
-        immediatelyRender: false,
-        onUpdate: ({ editor }) => {
-            const html = editor.getHTML();
-            debouncedSave(html);
-            socket.emit(ACTIONS.DOC_CHANGE, { room: roomId, content: html });
-        },
-        editorProps: {
-            attributes: {
-                class: "doc-editor focus:outline-none",
+    // CRDT session: Yjs doc + awareness relayed over the socket
+    const collabUser = useMemo(
+        () => (user ? { name: currUsername, color: pickCollabColor(user._id) } : null),
+        [user, currUsername]
+    );
+    const session = useCollabSession(socket, roomId, collabUser);
+
+    const editor = useEditor(
+        {
+            extensions: session
+                ? [
+                      StarterKit.configure({ undoRedo: false }),
+                      TextStyle,
+                      FontSize,
+                      FontFamily,
+                      TextAlign.configure({ types: ["heading", "paragraph"] }),
+                      Collaboration.configure({ document: session.doc }),
+                      CollaborationCaret.configure({
+                          provider: { awareness: session.awareness },
+                          user: collabUser ?? { name: currUsername, color: "#fbbf24" },
+                      }),
+                  ]
+                : [StarterKit],
+            immediatelyRender: false,
+            onUpdate: ({ editor, transaction }) => {
+                // Only persist our own edits — remote changes are already
+                // saved by their author
+                if (session && !isChangeOrigin(transaction)) {
+                    debouncedSave(
+                        editor.getHTML(),
+                        uint8ToBase64(Y.encodeStateAsUpdate(session.doc))
+                    );
+                }
+            },
+            editorProps: {
+                attributes: {
+                    class: "doc-editor focus:outline-none",
+                },
             },
         },
-    });
+        [session]
+    );
 
     useEffect(() => {
         if (userError) {
@@ -91,23 +115,28 @@ const DocPage = () => {
         }
     }, [room, roomId, currUsername, router]);
 
-    // Hydrate the document once from the persisted room
+    // Hydrate the Yjs doc once per session from the persisted room
     useEffect(() => {
-        if (!room || !editor || hasHydrated.current) {
+        if (!room || !session || !editor || hydratedDocRef.current === session.doc) {
             return;
         }
-        hasHydrated.current = true;
-        if (room.code) {
+        hydratedDocRef.current = session.doc;
+
+        if (room.yjsState) {
+            // Every client applies the same serialized state -> identical docs
+            Y.applyUpdate(session.doc, base64ToUint8(room.yjsState), "remote");
+        } else if (room.code) {
+            // Legacy room saved before CRDT sync existed — seed once
             editor.commands.setContent(room.code);
         }
-    }, [room, editor]);
+    }, [room, session, editor]);
 
     // Socket lifecycle — mirrors the code editor page
     const userEmail = user?.email;
     const isRoomLoaded = !!room;
 
     useEffect(() => {
-        if (!userEmail || !isRoomLoaded || !editor) {
+        if (!userEmail || !isRoomLoaded) {
             return;
         }
 
@@ -118,23 +147,14 @@ const DocPage = () => {
         };
 
         const handleUserJoined = ({ username }: { username: string }) => {
-            setPeerOnline(true);
             if (username !== currUsername) {
                 toast.success(`${username} joined the doc`);
             }
         };
 
         const handleUserLeft = ({ username }: { id: string; username?: string }) => {
-            setPeerOnline(false);
             if (username) {
                 toast.info(`${username} left the doc`);
-            }
-        };
-
-        const handleRemoteDocChange = ({ content }: { content: string }) => {
-            if (typeof content === "string") {
-                // setContent does not fire onUpdate, so no echo loop
-                editor.commands.setContent(content);
             }
         };
 
@@ -163,7 +183,6 @@ const DocPage = () => {
         socket.on("connect_error", handleConnectError);
         socket.on(ACTIONS.USER_JOINED, handleUserJoined);
         socket.on(ACTIONS.USER_LEFT, handleUserLeft);
-        socket.on(ACTIONS.DOC_CHANGE, handleRemoteDocChange);
         socket.on(ACTIONS.ROOM_ERROR, handleRoomError);
         socket.on("connect", join);
 
@@ -184,12 +203,11 @@ const DocPage = () => {
             socket.off("connect_error", handleConnectError);
             socket.off(ACTIONS.USER_JOINED, handleUserJoined);
             socket.off(ACTIONS.USER_LEFT, handleUserLeft);
-            socket.off(ACTIONS.DOC_CHANGE, handleRemoteDocChange);
             socket.off(ACTIONS.ROOM_ERROR, handleRoomError);
             socket.off("connect", join);
             socket.disconnect();
         };
-    }, [socket, userEmail, isRoomLoaded, editor, roomId, currUsername, router, joinRoom]);
+    }, [socket, userEmail, isRoomLoaded, roomId, currUsername, router, joinRoom]);
 
     const handleCopyRoomId = async () => {
         await navigator.clipboard.writeText(roomId);
@@ -218,7 +236,7 @@ const DocPage = () => {
         toast.success("Document downloaded");
     };
 
-    if (userLoading || roomLoading || !user || !room || !isSocketReady || !editor) {
+    if (userLoading || roomLoading || !user || !room || !isSocketReady || !editor || !session) {
         return (
             <div className="lp-root flex min-h-screen items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
@@ -247,23 +265,12 @@ const DocPage = () => {
 
                     <div className="min-w-0 flex-1">
                         <h1 className="truncate font-semibold text-stone-50">{room.name}</h1>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-stone-500">
-                                {isSaving ? "Saving…" : "Saved"}
-                            </span>
-                            <Badge
-                                variant="secondary"
-                                className={`gap-1.5 border-none px-1.5 py-0 text-[10px] ${
-                                    peerOnline
-                                        ? "bg-emerald-400/10 text-emerald-300"
-                                        : "bg-stone-800 text-stone-400"
-                                }`}
-                            >
-                                <Users className="h-3 w-3" />
-                                {peerOnline ? "2 online" : "Only you"}
-                            </Badge>
-                        </div>
+                        <span className="text-xs text-stone-500">
+                            {isSaving ? "Saving…" : "Saved"}
+                        </span>
                     </div>
+
+                    <CollabPresence awareness={session.awareness} />
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

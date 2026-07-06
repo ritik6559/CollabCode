@@ -1,7 +1,11 @@
-import { useCallback, useRef, useState } from 'react';
-import {toast} from "sonner";
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUpdateCode } from '../api/use-update-code';
 
+/**
+ * Debounced persistence for room content. Saves the derived plain
+ * content (for previews/exports) and, when provided, the serialized
+ * Yjs state (the CRDT source of truth for late joiners).
+ */
 const useSaveCode = (roomId: string, debounceDelay = 1000) => {
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -9,7 +13,7 @@ const useSaveCode = (roomId: string, debounceDelay = 1000) => {
     const lastSavedCodeRef = useRef('');
     const { mutateAsync: saveCodeToDatabase } = useUpdateCode();
 
-    const debouncedSave = useCallback((code: string) => {
+    const debouncedSave = useCallback((code: string, yjsState?: string) => {
         if (code === lastSavedCodeRef.current) {
             return;
         }
@@ -18,81 +22,31 @@ const useSaveCode = (roomId: string, debounceDelay = 1000) => {
             clearTimeout(saveTimeoutRef.current);
         }
 
-        setIsSaving(true);
-        console.log("saving")
-
         saveTimeoutRef.current = setTimeout(async () => {
+            setIsSaving(true);
             try {
-                await saveCodeToDatabase({
-                    roomId,
-                    code
-                });
+                await saveCodeToDatabase({ roomId, code, yjsState });
                 lastSavedCodeRef.current = code;
                 setLastSaved(new Date());
-                setIsSaving(false);
-
-
             } catch (error) {
+                // useUpdateCode already toasts the specific API error
                 console.error('Auto-save failed:', error);
+            } finally {
                 setIsSaving(false);
-                toast.error('Failed to auto-save code');
             }
         }, debounceDelay);
     }, [debounceDelay, saveCodeToDatabase, roomId]);
 
-    const saveNow = useCallback(async (code: string) => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-
-        setIsSaving(true);
-
-        try {
-            await saveCodeToDatabase({
-                roomId,
-                code
-            });
-            lastSavedCodeRef.current = code;
-            setLastSaved(new Date());
-            setIsSaving(false);
-            toast.success('Code saved successfully');
-        } catch (error) {
-            console.error('Manual save failed:', error);
-            setIsSaving(false);
-            toast.error('Failed to save code');
-            throw error;
-        }
-    }, [roomId, saveCodeToDatabase]);
-
-    const forceSave = useCallback(async (code: string) => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-
-        if (code && code !== lastSavedCodeRef.current) {
-            try {
-                await saveCodeToDatabase({
-                    roomId,
-                    code
-                });
-                lastSavedCodeRef.current = code;
-            } catch (error) {
-                console.error('Force save failed:', error);
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
             }
-        }
-    }, [roomId, saveCodeToDatabase]);
-
-    const cleanup = useCallback(() => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
+        };
     }, []);
 
     return {
         debouncedSave,
-        saveNow,
-        forceSave,
-        cleanup,
         isSaving,
         lastSaved,
     };

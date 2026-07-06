@@ -78,10 +78,15 @@ export const leaveRoom = async (roomId: string, userId: string) => {
     return { room, message };
 };
 
-export const updateRoomCode = async (roomId: string, code: string) => {
+export const updateRoomCode = async (roomId: string, code: string, yjsState?: string) => {
+    const update: Record<string, string> = { code };
+    if (yjsState !== undefined) {
+        update.yjsState = yjsState;
+    }
+
     const room = await Room.findByIdAndUpdate(
         roomId,
-        { code },
+        update,
         { new: true }
     ).populate("admin", USER_PUBLIC_FIELDS)
      .populate("joinedUser", USER_PUBLIC_FIELDS);

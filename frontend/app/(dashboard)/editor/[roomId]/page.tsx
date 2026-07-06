@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import EditorSidebar from "@/features/editor/components/editor-sidebar";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
+import { keymap } from "@codemirror/view";
+import { yCollab, yUndoManagerKeymap } from "y-codemirror.next";
+import * as Y from "yjs";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Download, Loader, PanelLeftIcon, Play } from "lucide-react";
 import { ACTIONS } from "@/lib/utils";
@@ -13,6 +16,7 @@ import { toast } from "sonner";
 import { useCodeExecution } from "@/hooks/use-code-execution";
 import { EXTENSION_BY_LANGUAGE, LANGUAGES } from "@/data";
 import { downloadFile, safeFileName } from "@/lib/download";
+import { base64ToUint8, pickCollabColor, uint8ToBase64 } from "@/lib/collab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,11 +26,13 @@ import ProgramOutput from "@/features/editor/components/program-output";
 import ErrorOutput from "@/features/editor/components/error-output";
 import CompilationOutput from "@/features/editor/components/compilation-output";
 import GettingStarted from "@/features/editor/components/getting-started";
+import CollabPresence from "@/components/collab-presence";
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 import { useGetRoomById } from "@/features/dashboard/api/use-get-room-by-id";
 import { useJoinRoom } from "@/features/dashboard/api/use-join-room";
 import useSaveCode from "@/features/dashboard/hooks/use-save-code";
 import { useSocket } from "@/context/SocketProvider";
+import { useCollabSession } from "@/hooks/use-collab-session";
 
 const EditorPage = () => {
     const params = useParams();
@@ -36,10 +42,8 @@ const EditorPage = () => {
     const currUsername = searchParams.get("username") || "Anonymous";
 
     const socket = useSocket();
-    const hasHydrated = useRef(false);
-    const isRemoteUpdate = useRef(false);
+    const hydratedDocRef = useRef<Y.Doc | null>(null);
 
-    const [code, setCode] = useState('');
     const [stdin, setStdin] = useState('');
     const [languageId, setLanguageId] = useState(28);
     const [isSocketReady, setIsSocketReady] = useState(false);
@@ -52,12 +56,28 @@ const EditorPage = () => {
 
     const { debouncedSave, isSaving } = useSaveCode(roomId);
 
-    useEffect(() => {
-        if (!currUsername) {
-            toast.error("Username is required");
-            router.push("/home");
-        }
-    }, [currUsername, router]);
+    // CRDT session: Yjs doc + awareness relayed over the socket
+    const collabUser = useMemo(
+        () => (user ? { name: currUsername, color: pickCollabColor(user._id) } : null),
+        [user, currUsername]
+    );
+    const session = useCollabSession(socket, roomId, collabUser);
+
+    const ytext = useMemo(() => session?.doc.getText("content"), [session]);
+
+    const undoManager = useMemo(
+        () => (ytext ? new Y.UndoManager(ytext) : null),
+        [ytext]
+    );
+
+    const extensions = useMemo(() => {
+        if (!session || !ytext || !undoManager) return [];
+        return [
+            keymap.of(yUndoManagerKeymap),
+            javascript({ jsx: true }),
+            yCollab(ytext, session.awareness, { undoManager }),
+        ];
+    }, [session, ytext, undoManager]);
 
     useEffect(() => {
         if (userError) {
@@ -70,17 +90,44 @@ const EditorPage = () => {
         }
     }, [userError, roomError, router]);
 
-    // Hydrate editor state once from the persisted room document
+    // Hydrate the Yjs doc once per session from the persisted room
     useEffect(() => {
-        if (!room || hasHydrated.current) {
+        if (!room || !session || !ytext || hydratedDocRef.current === session.doc) {
             return;
         }
-        hasHydrated.current = true;
-        setLanguageId(room.language ?? 28);
-        setCode(room.code || '');
-    }, [room]);
+        hydratedDocRef.current = session.doc;
 
-    // Socket lifecycle: register listeners, join the room, clean up symmetrically
+        setLanguageId(room.language ?? 28);
+
+        if (room.yjsState) {
+            // Every client applies the same serialized state -> identical docs
+            Y.applyUpdate(session.doc, base64ToUint8(room.yjsState), "remote");
+        } else if (room.code) {
+            // Legacy room saved before CRDT sync existed — seed once
+            ytext.insert(0, room.code);
+        }
+    }, [room, session, ytext]);
+
+    // Persist local edits: derived text for previews + the CRDT state
+    useEffect(() => {
+        if (!session || !ytext) {
+            return;
+        }
+        const { doc } = session;
+
+        const handleUpdate = (_update: Uint8Array, origin: unknown) => {
+            if (origin !== "remote") {
+                debouncedSave(ytext.toString(), uint8ToBase64(Y.encodeStateAsUpdate(doc)));
+            }
+        };
+
+        doc.on("update", handleUpdate);
+        return () => {
+            doc.off("update", handleUpdate);
+        };
+    }, [session, ytext, debouncedSave]);
+
+    // Socket lifecycle: join the room, surface errors, clean up symmetrically
     const userEmail = user?.email;
     const isRoomLoaded = !!room;
 
@@ -98,13 +145,6 @@ const EditorPage = () => {
         const handleUserJoined = ({ username }: { username: string }) => {
             if (username !== currUsername) {
                 toast.success(`${username} joined the room`);
-            }
-        };
-
-        const handleRemoteCodeChange = ({ code: incomingCode }: { code: string }) => {
-            if (incomingCode !== null && incomingCode !== undefined) {
-                isRemoteUpdate.current = true;
-                setCode(incomingCode);
             }
         };
 
@@ -132,7 +172,6 @@ const EditorPage = () => {
 
         socket.on("connect_error", handleConnectError);
         socket.on(ACTIONS.USER_JOINED, handleUserJoined);
-        socket.on(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
         socket.on(ACTIONS.ROOM_ERROR, handleRoomError);
         socket.on("connect", join);
 
@@ -152,7 +191,6 @@ const EditorPage = () => {
             clearTimeout(joinTimeout);
             socket.off("connect_error", handleConnectError);
             socket.off(ACTIONS.USER_JOINED, handleUserJoined);
-            socket.off(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
             socket.off(ACTIONS.ROOM_ERROR, handleRoomError);
             socket.off("connect", join);
             socket.disconnect();
@@ -163,7 +201,7 @@ const EditorPage = () => {
         e.preventDefault();
 
         await submitAndPoll({
-            source_code: code,
+            source_code: ytext?.toString() ?? "",
             language_id: languageId,
             stdin,
         });
@@ -182,26 +220,15 @@ const EditorPage = () => {
 
     const handleDownload = () => {
         const extension = EXTENSION_BY_LANGUAGE[languageId] ?? "txt";
-        downloadFile(`${safeFileName(room?.name ?? "code")}.${extension}`, code, "text/plain;charset=utf-8");
+        downloadFile(
+            `${safeFileName(room?.name ?? "code")}.${extension}`,
+            ytext?.toString() ?? "",
+            "text/plain;charset=utf-8"
+        );
         toast.success("Code downloaded");
     };
 
-    const handleCodeChange = (value: string) => {
-        if (isRemoteUpdate.current) {
-            isRemoteUpdate.current = false;
-            return;
-        }
-
-        setCode(value);
-        debouncedSave(value);
-
-        socket.emit(ACTIONS.CODE_CHANGE, {
-            room: roomId,
-            code: value,
-        });
-    };
-
-    if (userLoading || roomLoading || !user || !room || !isSocketReady) {
+    if (userLoading || roomLoading || !user || !room || !isSocketReady || !session) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-black">
                 <div className="flex flex-col items-center gap-4">
@@ -232,9 +259,7 @@ const EditorPage = () => {
                                 <PanelLeftIcon color="white" size={24} />
                             </SidebarTrigger>
                             <div className="flex flex-1 justify-between items-center">
-                                <div>
-                                    <p className="text-sm text-gray-400">Collaborative coding environment</p>
-                                </div>
+                                <CollabPresence awareness={session.awareness} />
                                 <div className="flex items-center gap-2">
                                     <Button
                                         onClick={handleDownload}
@@ -285,11 +310,9 @@ const EditorPage = () => {
                                     <CardContent className="p-0">
                                         <div className="rounded-lg overflow-hidden">
                                             <CodeMirror
-                                                value={code}
                                                 height="400px"
                                                 theme={oneDark}
-                                                extensions={[javascript({ jsx: true })]}
-                                                onChange={(value) => handleCodeChange(value)}
+                                                extensions={extensions}
                                                 basicSetup={{
                                                     lineNumbers: true,
                                                     foldGutter: true,
@@ -300,6 +323,7 @@ const EditorPage = () => {
                                                     closeBrackets: true,
                                                     autocompletion: true,
                                                     highlightSelectionMatches: true,
+                                                    history: false,
                                                 }}
                                                 className="text-sm"
                                             />

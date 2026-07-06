@@ -29,6 +29,9 @@ export const createRoomSchema = z.object({
 export const updateRoomCodeSchema = z.object({
     code: z.string({ required_error: "Code field is required" })
         .max(MAX_CONTENT_LENGTH, "Content is too large (max 256 KB)"),
+    yjsState: z.string()
+        .max(1_000_000, "Document state is too large")
+        .optional(),
 });
 
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;

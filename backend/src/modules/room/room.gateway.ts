@@ -88,6 +88,27 @@ export const registerRoomHandlers = (io: Server, socket: Socket) => {
     socket.on(ACTIONS.CODE_CHANGE, relayContent(ACTIONS.CODE_CHANGE, "code"));
     socket.on(ACTIONS.DOC_CHANGE, relayContent(ACTIONS.DOC_CHANGE, "content"));
 
+    // Yjs CRDT sync — binary document updates and awareness (cursors,
+    // names, colors) relayed only within rooms this socket has joined.
+    const relayBinary = (event: string) =>
+        (payload: { room: string; update: Buffer }) => {
+            const roomId = payload?.room;
+            const update = payload?.update;
+
+            if (typeof roomId !== "string" || !socket.rooms.has(roomId)) {
+                return;
+            }
+
+            if (!Buffer.isBuffer(update) || update.byteLength > MAX_CONTENT_LENGTH * 2) {
+                return;
+            }
+
+            socket.to(roomId).emit(event, { update });
+        };
+
+    socket.on(ACTIONS.YJS_UPDATE, relayBinary(ACTIONS.YJS_UPDATE));
+    socket.on(ACTIONS.YJS_AWARENESS, relayBinary(ACTIONS.YJS_AWARENESS));
+
     socket.on("disconnect", () => {
         const roomId = socket.data.roomId as string | undefined;
 

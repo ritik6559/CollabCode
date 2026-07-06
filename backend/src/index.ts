@@ -31,8 +31,9 @@ initDB()
         process.exit(1);
     });
 
-// Bumped from the 100kb default so file uploads (max 256 KB) fit in one request
-app.use(express.json({ limit: "1mb" }));
+// Bumped from the 100kb default so content (max 256 KB) plus the serialized
+// Yjs state fit in one request
+app.use(express.json({ limit: "2mb" }));
 app.use(cors({
     origin: [CLIENT_URL],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],

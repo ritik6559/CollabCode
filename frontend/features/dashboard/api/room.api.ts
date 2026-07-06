@@ -32,7 +32,15 @@ export const deleteRoom = async (roomId: string): Promise<{ roomId: string; name
     return res.data.data;
 };
 
-export const updateRoomCode = async ({ roomId, code }: { roomId: string; code: string }): Promise<Room> => {
-    const res = await axiosClient.patch<ApiEnvelope<Room>>(`/room/${roomId}/update`, { code });
+export const updateRoomCode = async ({
+    roomId,
+    code,
+    yjsState,
+}: {
+    roomId: string;
+    code: string;
+    yjsState?: string;
+}): Promise<Room> => {
+    const res = await axiosClient.patch<ApiEnvelope<Room>>(`/room/${roomId}/update`, { code, yjsState });
     return res.data.data;
 };

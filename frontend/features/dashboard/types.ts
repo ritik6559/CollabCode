@@ -20,6 +20,8 @@ export interface Room {
     createdAt: string;
     updatedAt: string;
     code: string;
+    /** Serialized Yjs document (base64) — present once a room has been edited with CRDT sync. */
+    yjsState?: string;
 }
 
 export const createRoomSchema = z.object({

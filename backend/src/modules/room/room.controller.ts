@@ -32,7 +32,7 @@ export const leaveRoom = asyncHandler(async (req, res) => {
 });
 
 export const updateRoomCode = asyncHandler(async (req, res) => {
-    const room = await roomService.updateRoomCode(req.params.roomId, req.body.code);
+    const room = await roomService.updateRoomCode(req.params.roomId, req.body.code, req.body.yjsState);
 
     res.status(200).json({
         success: true,

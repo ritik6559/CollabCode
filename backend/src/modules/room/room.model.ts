@@ -22,6 +22,11 @@ const roomSchema = new mongoose.Schema({
     code: {
         type: String,
     },
+    // Serialized Yjs document (base64) — the CRDT source of truth.
+    // `code` stays as the derived plain text/HTML for previews and exports.
+    yjsState: {
+        type: String,
+    },
     // Judge0 language id — only meaningful for "code" rooms
     // (requiredness is enforced by the Zod schema, not the model)
     language: {
