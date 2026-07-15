@@ -1,37 +1,49 @@
 import React from 'react';
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge";
-import {SubmissionResult} from "@/data";
+import { Activity } from "lucide-react";
+import { SubmissionResult } from "@/data";
+import OutputPanel from "./output-panel";
 
-interface Props{
-    result: SubmissionResult
+interface Props {
+    result: SubmissionResult;
 }
 
-const ExecutionStatus = ({
-    result
-}: Props) => {
+/** Judge0 status id 3 is "Accepted"; anything higher is a failure. */
+const ACCEPTED = 3;
+
+const ExecutionStatus = ({ result }: Props) => {
+    const passed = result.status.id === ACCEPTED;
+
     return (
-        <Card className="bg-blue-500/10 backdrop-blur-sm border-blue-500/30">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-blue-400 text-sm">Execution Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-                <div className="flex justify-between text-xs">
-                    <span className="text-gray-400">Status:</span>
-                    <Badge variant="secondary" className="bg-green-600/20 text-green-300">
-                        {result.status.description}
-                    </Badge>
+        <OutputPanel title="Execution" icon={Activity}>
+            <dl className="space-y-2.5 text-xs">
+                <div className="flex items-center justify-between gap-3">
+                    <dt className="text-stone-400">Status</dt>
+                    <dd>
+                        <span
+                            className={`rounded-full border px-2 py-0.5 font-medium ${
+                                passed
+                                    ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
+                                    : "border-rose-400/20 bg-rose-400/10 text-rose-200"
+                            }`}
+                        >
+                            {result.status.description}
+                        </span>
+                    </dd>
                 </div>
-                <div className="flex justify-between text-xs">
-                    <span className="text-gray-400">Time:</span>
-                    <span className="text-white">{result.time}s</span>
+                <div className="flex items-center justify-between gap-3">
+                    <dt className="text-stone-400">Time</dt>
+                    <dd className="font-mono text-stone-100">
+                        {result.time ? `${result.time}s` : "—"}
+                    </dd>
                 </div>
-                <div className="flex justify-between text-xs">
-                    <span className="text-gray-400">Memory:</span>
-                    <span className="text-white">{result.memory} KB</span>
+                <div className="flex items-center justify-between gap-3">
+                    <dt className="text-stone-400">Memory</dt>
+                    <dd className="font-mono text-stone-100">
+                        {result.memory ? `${result.memory} KB` : "—"}
+                    </dd>
                 </div>
-            </CardContent>
-        </Card>
+            </dl>
+        </OutputPanel>
     );
 };
 

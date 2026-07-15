@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-15T00:00:00.000Z",
+  "title": "Design System: CollabCode",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.147 0.004 49.25)",
+        "tonalRamp": ["#0c0a09", "#1c1917", "#292524", "#44403c", "#57534e", "#78716c", "#a8a29e", "#d6d3d1"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "oklch(0.216 0.006 56.04)",
+        "tonalRamp": ["#0c0a09", "#1c1917", "#292524", "#44403c", "#57534e", "#78716c", "#a8a29e", "#e7e5e4"]
+      },
+      "surface-raised": {
+        "role": "neutral",
+        "displayName": "Surface Raised",
+        "canonical": "oklch(0.268 0.007 34.3)",
+        "tonalRamp": ["#1c1917", "#292524", "#44403c", "#57534e", "#78716c", "#a8a29e", "#d6d3d1", "#f5f5f4"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Text Primary",
+        "canonical": "oklch(0.985 0.001 106.42)",
+        "tonalRamp": ["#292524", "#44403c", "#57534e", "#78716c", "#a8a29e", "#d6d3d1", "#e7e5e4", "#fafaf9"]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Text Muted",
+        "canonical": "oklch(0.709 0.01 56.26)",
+        "tonalRamp": ["#292524", "#44403c", "#57534e", "#78716c", "#a8a29e", "#d6d3d1", "#e7e5e4", "#fafaf9"]
+      },
+      "lamp-amber": {
+        "role": "primary",
+        "displayName": "Lamp Amber",
+        "canonical": "oklch(0.828 0.189 84.43)",
+        "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a"]
+      },
+      "lamp-orange": {
+        "role": "primary",
+        "displayName": "Lamp Orange",
+        "canonical": "oklch(0.75 0.183 55.93)",
+        "tonalRamp": ["#431407", "#7c2d12", "#9a3412", "#c2410c", "#ea580c", "#f97316", "#fb923c", "#fed7aa"]
+      },
+      "signal-teal": {
+        "role": "secondary",
+        "displayName": "Signal Teal",
+        "canonical": "oklch(0.777 0.152 181.91)",
+        "tonalRamp": ["#042f2e", "#134e4a", "#115e59", "#0f766e", "#0d9488", "#14b8a6", "#2dd4bf", "#99f6e4"]
+      },
+      "ember-rose": {
+        "role": "secondary",
+        "displayName": "Ember Rose",
+        "canonical": "oklch(0.712 0.166 22.22)",
+        "tonalRamp": ["#4c0519", "#881337", "#9f1239", "#be123c", "#e11d48", "#f43f5e", "#fb7185", "#fecdd3"]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Success Emerald",
+        "canonical": "oklch(0.765 0.148 163.22)",
+        "tonalRamp": ["#022c22", "#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0"]
+      },
+      "doc-paper": {
+        "role": "neutral",
+        "displayName": "Doc Paper",
+        "canonical": "oklch(0.993 0.011 95.0)",
+        "tonalRamp": ["#292524", "#57534e", "#78716c", "#a8a29e", "#d6d3d1", "#e7e5e4", "#f5f5f4", "#fffdf7"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Landing hero only. The one place the fluid clamp scale is permitted." },
+      "headline": { "displayName": "Headline", "purpose": "Page-owning titles: 'Welcome back', 'Create your account', landing section heads." },
+      "title": { "displayName": "Title", "purpose": "Card names, dialog titles, the doc name in the editor header." },
+      "body": { "displayName": "Body", "purpose": "The product workhorse: labels, descriptions, menu items, buttons. Prose capped at 65-75ch." },
+      "label": { "displayName": "Label", "purpose": "Uppercase tracked zone markers and presence chips. Rationed to one per zone." },
+      "code": { "displayName": "Code", "purpose": "Geist Mono. Editor content, room IDs, terminal mockups, cursor name labels." }
+    },
+    "shadows": [
+      { "name": "flat", "value": "none", "purpose": "The default. Surfaces are flat at rest; depth comes from stepping the neutral ramp." },
+      { "name": "ambient-lift", "value": "0 20px 60px -20px rgba(251, 146, 60, 0.35)", "purpose": "Card hover only, paired with translateY(-6px) and an amber border. The lamp catching an edge." },
+      { "name": "action-glow", "value": "0 10px 15px -3px rgba(249, 115, 22, 0.25)", "purpose": "Under primary amber buttons. Colour-matched to the element casting it." },
+      { "name": "floating", "value": "0 25px 50px -12px rgba(0, 0, 0, 0.5)", "purpose": "Dialogs, dropdowns, the doc page against its dark desk." },
+      { "name": "glass", "value": "backdrop-filter: blur(24px); background: rgba(12, 10, 9, 0.8)", "purpose": "Sticky headers and the doc toolbar. Only where content scrolls beneath." }
+    ],
+    "motion": [
+      { "name": "duration-state", "value": "150ms", "purpose": "Colour and border state changes: links, toolbar buttons, menu items." },
+      { "name": "duration-transition", "value": "200ms", "purpose": "Button fills, focus rings, avatar scale." },
+      { "name": "duration-lift", "value": "350ms", "purpose": "Card hover lift and glow." },
+      { "name": "duration-reveal", "value": "800ms", "purpose": "Landing-page entrance reveals only. Prohibited in the app." },
+      { "name": "ease-out-quart", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "The system's default. Exponential ease-out; no bounce, no elastic." },
+      { "name": "reduced-motion", "value": "@media (prefers-reduced-motion: reduce) { animation: none; opacity: 1; transform: none; }", "purpose": "Mandatory alternative for every animation. Non-negotiable." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single primary action on a screen. Amber gradient with Ink text, never white.",
+      "html": "<button class=\"ds-btn-primary\">Create room</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 16px; border: none; border-radius: 8px; background: linear-gradient(to right, #fbbf24, #f97316); color: #0c0a09; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.25); transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-primary:hover { background: linear-gradient(to right, #fcd34d, #fb923c); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "The universal Cancel / dismiss. Hairline border on a barely-there fill.",
+      "html": "<button class=\"ds-btn-outline\">Cancel</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border: 1px solid rgba(250, 250, 249, 0.15); border-radius: 8px; background: rgba(250, 250, 249, 0.05); color: #e7e5e4; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 150ms cubic-bezier(0.22, 1, 0.36, 1), color 150ms; } .ds-btn-outline:hover { background: rgba(250, 250, 249, 0.1); color: #ffffff; } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "The standard form field: leading icon, surface fill, amber focus ring.",
+      "html": "<div class=\"ds-field\"><svg class=\"ds-field-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\"/><path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\"/></svg><input class=\"ds-field-input\" type=\"email\" placeholder=\"you@example.com\" /></div>",
+      "css": ".ds-field { position: relative; width: 100%; } .ds-field-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #78716c; pointer-events: none; } .ds-field-input { width: 100%; height: 44px; padding: 0 12px 0 40px; border: 1px solid rgba(250, 250, 249, 0.1); border-radius: 8px; background: rgba(28, 25, 23, 0.6); color: #fafaf9; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; outline: none; transition: border-color 200ms, box-shadow 200ms; } .ds-field-input::placeholder { color: #a8a29e; } .ds-field-input:focus-visible { border-color: rgba(251, 191, 36, 0.5); box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2); }"
+    },
+    {
+      "name": "Search Pill",
+      "kind": "input",
+      "refersTo": "search-pill",
+      "description": "The dashboard's global search. Fully rounded to mark it as global, not a form field.",
+      "html": "<div class=\"ds-search\"><svg class=\"ds-search-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-search-input\" type=\"text\" placeholder=\"Search your rooms\" /></div>",
+      "css": ".ds-search { position: relative; width: 100%; max-width: 576px; } .ds-search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #78716c; pointer-events: none; } .ds-search-input { width: 100%; height: 44px; padding: 0 40px 0 44px; border: 1px solid rgba(250, 250, 249, 0.1); border-radius: 9999px; background: rgba(28, 25, 23, 0.6); color: #fafaf9; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; outline: none; transition: border-color 200ms, box-shadow 200ms; } .ds-search-input::placeholder { color: #a8a29e; } .ds-search-input:focus-visible { border-color: rgba(251, 191, 36, 0.4); box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2); }"
+    },
+    {
+      "name": "Room Card",
+      "kind": "card",
+      "refersTo": "card-room",
+      "description": "The dashboard's room tile: code-preview thumbnail, type-marked icon, name, one metadata line.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-thumb\"><pre class=\"ds-card-code\">def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        need = target - n\n        if need in seen:\n            return [seen[need], i]</pre><div class=\"ds-card-fade\"></div><span class=\"ds-card-shared\">Shared</span></div><div class=\"ds-card-info\"><span class=\"ds-card-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 12.5 8 15l2 2.5\"/><path d=\"m14 12.5 2 2.5-2 2.5\"/><path d=\"M14 2v4a2 2 0 0 0 2 2h4\"/><path d=\"M15 22H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9l5 5v3\"/></svg></span><div class=\"ds-card-meta\"><h3 class=\"ds-card-title\">two-sum practice</h3><p class=\"ds-card-sub\">Python 3.10 · Owned by you · 04/07/2026 18:30</p></div></div></div>",
+      "css": ".ds-card { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(250, 250, 249, 0.08); background: linear-gradient(180deg, rgba(28, 25, 23, 0.7), rgba(12, 10, 9, 0.7)); cursor: pointer; transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1), border-color 350ms, box-shadow 350ms; } .ds-card:hover { transform: translateY(-6px); border-color: rgba(251, 146, 60, 0.45); box-shadow: 0 20px 60px -20px rgba(251, 146, 60, 0.35); } .ds-card-thumb { position: relative; height: 144px; overflow: hidden; border-bottom: 1px solid rgba(250, 250, 249, 0.08); background: #0c0a09; } .ds-card-code { margin: 0; padding: 16px; font-family: ui-monospace, monospace; font-size: 10px; line-height: 16px; color: #78716c; pointer-events: none; } .ds-card-fade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(12, 10, 9, 0.6), transparent); } .ds-card-shared { position: absolute; right: 12px; top: 12px; padding: 2px 8px; border: 1px solid rgba(45, 212, 191, 0.2); border-radius: 9999px; background: rgba(45, 212, 191, 0.1); color: #99f6e4; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 10px; font-weight: 500; } .ds-card-info { display: flex; align-items: flex-start; gap: 12px; padding: 16px; } .ds-card-icon { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 8px; background: rgba(251, 191, 36, 0.1); color: #fcd34d; } .ds-card-meta { min-width: 0; flex: 1; } .ds-card-title { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 600; color: #f5f5f4; transition: color 350ms; } .ds-card:hover .ds-card-title { color: #fde68a; } .ds-card-sub { margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; color: #a8a29e; }"
+    },
+    {
+      "name": "Presence Chip",
+      "kind": "chip",
+      "refersTo": "presence-chip",
+      "description": "Signature component. One per collaborator in the editor header; the dot matches their cursor colour exactly.",
+      "html": "<div class=\"ds-presence\"><span class=\"ds-chip\"><span class=\"ds-chip-dot\" style=\"background: #fbbf24\"></span>ritik (you)</span><span class=\"ds-chip\"><span class=\"ds-chip-dot\" style=\"background: #2dd4bf\"></span>priya</span></div>",
+      "css": ".ds-presence { display: flex; align-items: center; gap: 6px; } .ds-chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid rgba(250, 250, 249, 0.1); border-radius: 9999px; background: rgba(28, 25, 23, 0.6); color: #e7e5e4; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; } .ds-chip-dot { width: 8px; height: 8px; border-radius: 9999px; flex-shrink: 0; }"
+    },
+    {
+      "name": "Collaborator Cursor",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Signature component. The remote caret with its name label, identical in CodeMirror and TipTap.",
+      "html": "<div class=\"ds-cursor-demo\"><span class=\"ds-cursor-text\">const map = new </span><span class=\"ds-cursor\" style=\"border-color: #2dd4bf\"><span class=\"ds-cursor-label\" style=\"background: #2dd4bf\">priya</span></span><span class=\"ds-cursor-text\">Map();</span></div>",
+      "css": ".ds-cursor-demo { padding: 32px 16px 16px; background: #0c0a09; border-radius: 8px; font-family: ui-monospace, monospace; font-size: 13px; line-height: 1.75; color: #d6d3d1; } .ds-cursor { position: relative; display: inline; border-left: 2px solid; margin-left: -1px; margin-right: -1px; } .ds-cursor-label { position: absolute; top: -1.4em; left: -2px; padding: 1px 6px; border-radius: 4px 4px 4px 0; color: #0c0a09; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 600; line-height: 1.3; white-space: nowrap; user-select: none; pointer-events: none; }"
+    },
+    {
+      "name": "Toolbar Button",
+      "kind": "button",
+      "refersTo": "toolbar-button",
+      "description": "The doc editor's formatting control. Amber tint marks the active mark.",
+      "html": "<div class=\"ds-toolbar\"><button class=\"ds-tb ds-tb-active\" aria-label=\"Bold\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8\"/></svg></button><button class=\"ds-tb\" aria-label=\"Italic\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"19\" x2=\"10\" y1=\"4\" y2=\"4\"/><line x1=\"14\" x2=\"5\" y1=\"20\" y2=\"20\"/><line x1=\"15\" x2=\"9\" y1=\"4\" y2=\"20\"/></svg></button><span class=\"ds-tb-divider\"></span><button class=\"ds-tb\" aria-label=\"Bullet list\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12h.01\"/><path d=\"M3 18h.01\"/><path d=\"M3 6h.01\"/><path d=\"M8 12h13\"/><path d=\"M8 18h13\"/><path d=\"M8 6h13\"/></svg></button></div>",
+      "css": ".ds-toolbar { display: flex; align-items: center; gap: 4px; padding: 8px; border-bottom: 1px solid rgba(250, 250, 249, 0.1); background: rgba(12, 10, 9, 0.8); backdrop-filter: blur(24px); } .ds-tb { display: grid; place-items: center; width: 32px; height: 32px; border: none; border-radius: 8px; background: transparent; color: #d6d3d1; cursor: pointer; transition: background 150ms, color 150ms; } .ds-tb:hover { background: rgba(41, 37, 36, 0.8); color: #fafaf9; } .ds-tb:disabled { opacity: 0.4; pointer-events: none; } .ds-tb-active { background: rgba(251, 191, 36, 0.2); color: #fcd34d; } .ds-tb-divider { width: 1px; height: 20px; margin: 0 4px; background: rgba(250, 250, 249, 0.1); }"
+    },
+    {
+      "name": "Error Banner",
+      "kind": "custom",
+      "refersTo": "error-banner",
+      "description": "Form-level error carrying the server's actual message, never a generic fallback.",
+      "html": "<div class=\"ds-error\" role=\"alert\"><svg class=\"ds-error-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"/><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"/></svg><span>Invalid email or password</span></div>",
+      "css": ".ds-error { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border: 1px solid rgba(251, 113, 133, 0.3); border-radius: 8px; background: rgba(251, 113, 133, 0.1); color: #fecdd3; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.5; } .ds-error-icon { flex-shrink: 0; margin-top: 2px; color: #fda4af; }"
+    },
+    {
+      "name": "App Navigation",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "The sticky app header: brand mark left, context centre, identity right.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-nav-brand\" href=\"#\"><span class=\"ds-nav-mark\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 16 4-4-4-4\"/><path d=\"m6 8-4 4 4 4\"/><path d=\"m14.5 4-5 16\"/></svg></span><span class=\"ds-nav-word\">CollabCode</span></a><nav class=\"ds-nav-links\"><a class=\"ds-nav-link\" href=\"#\">Features</a><a class=\"ds-nav-link\" href=\"#\">Languages</a></nav><button class=\"ds-nav-avatar\" aria-label=\"Account menu\">R</button></header>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 16px; height: 64px; padding: 0 16px; border-bottom: 1px solid rgba(250, 250, 249, 0.1); background: rgba(12, 10, 9, 0.7); backdrop-filter: blur(24px); } .ds-nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; } .ds-nav-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(to bottom right, #fbbf24, #fb7185); color: #0c0a09; box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3); } .ds-nav-word { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: #fafaf9; } .ds-nav-links { display: flex; align-items: center; gap: 4px; margin-left: auto; } .ds-nav-link { padding: 8px 12px; border-radius: 8px; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; color: #d6d3d1; text-decoration: none; transition: color 150ms; } .ds-nav-link:hover { color: #fcd34d; } .ds-nav-avatar { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border: none; border-radius: 9999px; background: linear-gradient(to bottom right, #fbbf24, #fb7185); color: #0c0a09; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.2); transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-nav-avatar:hover { transform: scale(1.05); } .ds-nav-avatar:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.4); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Lamplit Desk",
+    "overview": "Two people sit at one desk after dark. The room around them is dim, quiet, and out of the way — nothing on the walls competes for attention. A single warm lamp lights exactly the work in front of them and the hands moving across it. Everything CollabCode looks like follows from that scene: the surface is a warm charcoal that recedes, and amber is the lamp, never the paint.\n\nThis is why the interface is calm without being cold. The near-black (#0c0a09) carries a trace of warmth rather than the blue-gray of a terminal, so long sessions feel like a room and not a machine. Colour appears at exactly two kinds of moments: the people (a collaborator's cursor, their name, their presence chip) and the actions (the one primary button on a screen). Everything else — panels, dividers, metadata, chrome — is a step on the stone ramp and stays quiet. When your partner's cursor appears in the editor, it should be the brightest new thing on screen, because that is the product.\n\nThe system explicitly rejects corporate IDE chrome: no toolbar sprawl, no gray enterprise panels, no dense workbench where every pixel is a control. A CollabCode room is a room, not a cockpit. It equally rejects toy and gamified aesthetics: no mascots, no badges, no confetti, no XP. The users are doing real work with a friend, and the interface treats them as adults. The one place the system is allowed to raise its voice is the marketing landing page, which is a separate room from the app and governed by its own rule.",
+    "keyCharacteristics": [
+      "Warm charcoal canvas (#0c0a09 → #1c1917), never blue-gray",
+      "Amber reserved for people and primary actions; ≤10% of any app screen",
+      "One typeface (Geist Sans) across the entire product; Geist Mono for code and IDs",
+      "Flat by default; depth from tonal layering and hairline borders, not shadows",
+      "Fixed rem type scale in the app; fluid clamp scales only on the landing page",
+      "Presence is a designed element, not a status readout"
+    ],
+    "rules": [
+      { "name": "The Lamp Rule", "body": "Amber is light, not paint. It may occupy no more than ~10% of any app screen, and only on people (cursors, presence, avatars) or the single primary action. If a screen has two amber buttons, one of them is wrong.", "section": "colors" },
+      { "name": "The Identity Rule", "body": "The eight collaborator hues are reserved for identity. Never reach into that ramp for a chart, a tag, or a decorative accent — and never let colour be the only carrier of who someone is. The name label ships with the cursor, always.", "section": "colors" },
+      { "name": "The Warm Neutral Rule", "body": "Every neutral carries warmth (hue ~40–60, chroma ≤0.01). Blue-gray or pure-neutral gray is prohibited in the app shell; it is the tell of the corporate IDE this product rejects.", "section": "colors" },
+      { "name": "The Contrast Floor Rule", "body": "text-muted (#a8a29e, 6.7:1) is the darkest text permitted for anything a user reads, including placeholders. text-faint is for decoration and disabled states only. If you are unsure, step toward text-primary.", "section": "colors" },
+      { "name": "The One Family Rule", "body": "Geist Sans carries the entire product; Geist Mono carries only what the machine owns (code, IDs, execution output). A third family is prohibited. If a heading needs more presence, add weight, not personality.", "section": "typography" },
+      { "name": "The Fixed Scale Rule", "body": "The app uses a fixed rem scale. clamp() is permitted on the landing hero and nowhere else — a fluid title that shrinks inside a sidebar looks broken, not responsive.", "section": "typography" },
+      { "name": "The Rationed Caps Rule", "body": "Uppercase tracked labels are load-bearing structure on the dashboard (two of them, marking the two zones) and are prohibited as decorative eyebrows above every section. One per zone, or none.", "section": "typography" },
+      { "name": "The Flat-At-Rest Rule", "body": "Surfaces are flat until the user touches them. If a card has a shadow before hover, remove it and step the background instead.", "section": "elevation" },
+      { "name": "The Warm Shadow Rule", "body": "Shadows under amber elements are amber. A neutral black drop under a warm button is the 2014 tell — if it looks like a Bootstrap button, the shadow is the reason.", "section": "elevation" },
+      { "name": "The Structural Blur Rule", "body": "Backdrop blur must have something scrolling under it. Glass used for flavour on a static card is prohibited.", "section": "elevation" },
+      { "name": "The Two Rooms Rule", "body": "The marketing page may perform, the product may not. The landing page's effects (lp-aurora, lp-marquee, lp-float, lp-shine, lp-typeline) never cross into the app.", "section": "components" }
+    ],
+    "dos": [
+      "Do keep amber under ~10% of any app screen, on people and the single primary action only (The Lamp Rule).",
+      "Do use Ink (#0c0a09) text on amber fills. Dark-on-warm is the system's signature; white-on-amber fails contrast and looks generic.",
+      "Do step the neutral ramp (Ink → Surface → Surface Raised) to create depth, and leave surfaces flat until hover.",
+      "Do colour-match shadows to the element casting them — amber glow under amber buttons.",
+      "Do ship a name label with every collaborator cursor. Colour is never the only carrier of identity.",
+      "Do hold body text at text-muted (#a8a29e, 6.7:1) or lighter, placeholders included.",
+      "Do give every interactive element all seven states: default, hover, focus-visible, active, disabled, loading, error.",
+      "Do pair loading spinners with present-tense labels (\"Creating…\", \"Joining…\").",
+      "Do put the server's real message in error banners. \"Invalid email or password\" beats \"Something went wrong\".",
+      "Do keep transitions at 150–250ms with ease-out curves, and give every animation a prefers-reduced-motion alternative.",
+      "Do use clamp() on the landing hero and a fixed rem scale everywhere else."
+    ],
+    "donts": [
+      "Don't build corporate IDE chrome — toolbar sprawl, gray enterprise panels, dense workbench controls. A CollabCode room is a room, not a cockpit. (PRODUCT.md anti-reference.)",
+      "Don't introduce toy or gamified aesthetics — mascots, badges, confetti, XP bars. The users are doing real work. (PRODUCT.md anti-reference.)",
+      "Don't use blue-gray or pure-neutral gray in the app shell. Every neutral carries warmth. The editor's legacy gray-900 → black gradient, blue badges, and green Run button are known drift and should be migrated to this system.",
+      "Don't borrow the eight collaborator hues for charts, tags, or decoration. That ramp means identity.",
+      "Don't use rose for anything decorative in the app; it is load-bearing for danger.",
+      "Don't ship background-clip: text gradient headings. The landing page's .lp-gradient-text is acknowledged debt — it is prohibited in new work, in the app entirely, and should be replaced with a solid text-primary heading.",
+      "Don't use glassmorphism decoratively. Backdrop blur requires content scrolling beneath it.",
+      "Don't nest cards inside cards. Ever.",
+      "Don't use border-left/border-right greater than 1px as a coloured accent stripe. The doc editor's blockquote is the single deliberate exception, and it is a typographic convention, not a UI accent.",
+      "Don't use text-faint (#78716c) for anything a user must read — it fails AA at 3.6:1.",
+      "Don't put uppercase tracked eyebrows above every section. Two on the dashboard mark two real zones; a third is decoration.",
+      "Don't let the landing page's effects (lp-aurora, lp-marquee, lp-float, lp-shine, lp-typeline) cross into the app. The Two Rooms Rule: the marketing page may perform, the product may not.",
+      "Don't use display fonts, decorative motion, or invented affordances in product UI. Reach for the boring, familiar control."
+    ]
+  }
+}

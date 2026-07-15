@@ -265,7 +265,7 @@ const DocPage = () => {
 
                     <div className="min-w-0 flex-1">
                         <h1 className="truncate font-semibold text-stone-50">{room.name}</h1>
-                        <span className="text-xs text-stone-500">
+                        <span className="text-xs text-stone-400">
                             {isSaving ? "Saving…" : "Saved"}
                         </span>
                     </div>

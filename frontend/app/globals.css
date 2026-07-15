@@ -363,6 +363,67 @@
   pointer-events: none;
 }
 
+/* ---- Code editor pane (CodeMirror) ----
+   oneDark supplies the syntax colours (content); the chrome is overridden
+   here so the pane sits in the app's warm room instead of oneDark's
+   blue-gray. Selectors are scoped under .code-pane and carry enough
+   specificity to beat oneDark without !important. */
+.code-pane .cm-editor {
+  background: transparent;
+}
+.code-pane .cm-editor.cm-focused {
+  outline: none;
+}
+.code-pane .cm-editor .cm-scroller {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  line-height: 1.75;
+}
+.code-pane .cm-editor .cm-content {
+  caret-color: #fbbf24;
+  padding: 12px 0;
+}
+.code-pane .cm-editor .cm-gutters {
+  background: transparent;
+  border-right: 1px solid rgba(250, 250, 249, 0.06);
+  color: #78716c;
+}
+.code-pane .cm-editor .cm-activeLine {
+  background: rgba(250, 250, 249, 0.03);
+}
+.code-pane .cm-editor .cm-activeLineGutter {
+  background: rgba(250, 250, 249, 0.04);
+  color: #a8a29e;
+}
+.code-pane .cm-editor .cm-cursor,
+.code-pane .cm-editor .cm-dropCursor {
+  border-left-color: #fbbf24;
+}
+.code-pane .cm-editor .cm-selectionBackground,
+.code-pane .cm-editor.cm-focused .cm-selectionBackground {
+  background: rgba(251, 191, 36, 0.22);
+}
+.code-pane .cm-editor .cm-content ::selection {
+  background: rgba(251, 191, 36, 0.22);
+}
+.code-pane .cm-editor .cm-matchingBracket,
+.code-pane .cm-editor.cm-focused .cm-matchingBracket {
+  background: rgba(251, 191, 36, 0.18);
+  outline: none;
+  color: inherit;
+}
+.code-pane .cm-editor .cm-selectionMatch {
+  background: rgba(45, 212, 191, 0.16);
+}
+.code-pane .cm-editor .cm-tooltip {
+  border: 1px solid rgba(250, 250, 249, 0.1);
+  background: #1c1917;
+  border-radius: 8px;
+}
+.code-pane .cm-editor .cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fafaf9;
+}
+
 /* ---- Doc editor page (TipTap) ---- */
 .doc-page {
   background: #fffdf7; /* warm paper */

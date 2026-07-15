@@ -1,31 +1,37 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import EditorSidebar from "@/features/editor/components/editor-sidebar";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { keymap } from "@codemirror/view";
 import { yCollab, yUndoManagerKeymap } from "y-codemirror.next";
 import * as Y from "yjs";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Download, Loader, PanelLeftIcon, Play } from "lucide-react";
-import { ACTIONS } from "@/lib/utils";
+import {
+    AlertCircle,
+    Copy,
+    Download,
+    FileCode2,
+    Loader2,
+    LogOut,
+    Play,
+} from "lucide-react";
 import { toast } from "sonner";
+import { ACTIONS } from "@/lib/utils";
 import { useCodeExecution } from "@/hooks/use-code-execution";
 import { EXTENSION_BY_LANGUAGE, LANGUAGES } from "@/data";
 import { downloadFile, safeFileName } from "@/lib/download";
 import { base64ToUint8, pickCollabColor, uint8ToBase64 } from "@/lib/collab";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import ExecutionStatus from "@/features/editor/components/execution-status";
 import ProgramOutput from "@/features/editor/components/program-output";
 import ErrorOutput from "@/features/editor/components/error-output";
 import CompilationOutput from "@/features/editor/components/compilation-output";
 import GettingStarted from "@/features/editor/components/getting-started";
+import OutputPanel from "@/features/editor/components/output-panel";
 import CollabPresence from "@/components/collab-presence";
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 import { useGetRoomById } from "@/features/dashboard/api/use-get-room-by-id";
@@ -90,6 +96,13 @@ const EditorPage = () => {
         }
     }, [userError, roomError, router]);
 
+    // Doc rooms belong in the rich-text editor
+    useEffect(() => {
+        if (room && room.type === "doc") {
+            router.replace(`/doc/${roomId}?username=${encodeURIComponent(currUsername)}`);
+        }
+    }, [room, roomId, currUsername, router]);
+
     // Hydrate the Yjs doc once per session from the persisted room
     useEffect(() => {
         if (!room || !session || !ytext || hydratedDocRef.current === session.doc) {
@@ -148,6 +161,12 @@ const EditorPage = () => {
             }
         };
 
+        const handleUserLeft = ({ username }: { id: string; username?: string }) => {
+            if (username) {
+                toast.info(`${username} left the room`);
+            }
+        };
+
         const handleRoomError = ({ message }: { message: string }) => {
             toast.error(message || "Room connection error");
             router.push("/home");
@@ -172,6 +191,7 @@ const EditorPage = () => {
 
         socket.on("connect_error", handleConnectError);
         socket.on(ACTIONS.USER_JOINED, handleUserJoined);
+        socket.on(ACTIONS.USER_LEFT, handleUserLeft);
         socket.on(ACTIONS.ROOM_ERROR, handleRoomError);
         socket.on("connect", join);
 
@@ -191,15 +211,14 @@ const EditorPage = () => {
             clearTimeout(joinTimeout);
             socket.off("connect_error", handleConnectError);
             socket.off(ACTIONS.USER_JOINED, handleUserJoined);
+            socket.off(ACTIONS.USER_LEFT, handleUserLeft);
             socket.off(ACTIONS.ROOM_ERROR, handleRoomError);
             socket.off("connect", join);
             socket.disconnect();
         };
     }, [socket, userEmail, isRoomLoaded, roomId, currUsername, router, joinRoom]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const handleRun = async () => {
         await submitAndPoll({
             source_code: ytext?.toString() ?? "",
             language_id: languageId,
@@ -207,15 +226,9 @@ const EditorPage = () => {
         });
     };
 
-    const handleLeaveRoom = () => {
-        router.push("/home");
-    };
-
     const handleCopyRoomId = async () => {
-        if (roomId) {
-            await navigator.clipboard.writeText(roomId);
-            toast.success("Room ID copied!");
-        }
+        await navigator.clipboard.writeText(roomId);
+        toast.success("Room ID copied!");
     };
 
     const handleDownload = () => {
@@ -230,179 +243,161 @@ const EditorPage = () => {
 
     if (userLoading || roomLoading || !user || !room || !isSocketReady || !session) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-black">
+            <div className="lp-root flex min-h-screen items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader className="animate-spin w-8 h-8 text-white" />
-                    <p className="text-gray-400 text-sm">
-                        {userLoading ? "Loading user data..." :
-                         roomLoading ? "Loading room data..." :
-                         !isSocketReady ? "Connecting to room..." :
-                         "Initializing editor..."}
+                    <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+                    <p className="text-sm text-stone-400">
+                        {userLoading ? "Loading your account…" :
+                         roomLoading ? "Loading room…" :
+                         "Connecting to room…"}
                     </p>
                 </div>
             </div>
         );
     }
 
+    const languageName = LANGUAGES[languageId as keyof typeof LANGUAGES] ?? "Unknown";
+
     return (
-        <div>
-            <SidebarProvider>
-                <div className="flex w-full">
-                    <EditorSidebar
-                        room={room}
-                        onLeaveRoom={handleLeaveRoom}
-                        onCopyRoomId={handleCopyRoomId}
-                    />
-                    <main className="flex-1 flex flex-col">
-                        <header className="bg-black/40 border-b border-gray-700/50 p-4 flex items-center gap-4">
-                            <SidebarTrigger className="text-white hover:bg-gray-700/50 p-2 rounded-md transition-colors">
-                                <PanelLeftIcon color="white" size={24} />
-                            </SidebarTrigger>
-                            <div className="flex flex-1 justify-between items-center">
-                                <CollabPresence awareness={session.awareness} />
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        onClick={handleDownload}
-                                        variant="outline"
-                                        className="border-gray-600/50 bg-gray-800/50 text-gray-200 hover:bg-gray-700/50 hover:text-white flex items-center gap-2 cursor-pointer"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        Download
-                                    </Button>
-                                    <Button
-                                        onClick={handleSubmit}
-                                        disabled={loading}
-                                        className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 cursor-pointer"
-                                    >
-                                        {loading ? (
-                                            <Loader className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <Play className="w-4 h-4" />
-                                        )}
-                                        Run Code
-                                    </Button>
-                                </div>
-                            </div>
-                        </header>
+        <div className="lp-root min-h-screen">
+            {/* Header — identity, presence, file actions */}
+            <header className="sticky top-0 z-40 border-b border-stone-100/10 bg-stone-950/80 backdrop-blur-xl">
+                <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
+                    <Link
+                        href="/home"
+                        aria-label="Back to your rooms"
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/25 transition-transform hover:scale-105"
+                    >
+                        <FileCode2 className="h-5 w-5 text-stone-950" />
+                    </Link>
 
-                        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
-                            <div className="lg:col-span-2 space-y-4">
-                                <Card className="bg-black/20 backdrop-blur-sm border-gray-700/30">
-                                    <CardHeader className="pb-2">
-                                        <div className="flex items-center justify-between">
-                                            <CardTitle className="text-white">Code Editor</CardTitle>
-                                            <div className="flex justify-center items-center gap-2">
-                                                {isSaving && (
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="bg-blue-600/20 text-white"
-                                                    >
-                                                        <Loader className="animate-spin w-3 h-3 mr-1" />
-                                                        Syncing code
-                                                    </Badge>
-                                                )}
-                                                <Badge variant="secondary" className="bg-blue-600/20 text-blue-300">
-                                                    {LANGUAGES[languageId as keyof typeof LANGUAGES] || 'Unknown'}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="p-0">
-                                        <div className="rounded-lg overflow-hidden">
-                                            <CodeMirror
-                                                height="400px"
-                                                theme={oneDark}
-                                                extensions={extensions}
-                                                basicSetup={{
-                                                    lineNumbers: true,
-                                                    foldGutter: true,
-                                                    dropCursor: true,
-                                                    allowMultipleSelections: true,
-                                                    indentOnInput: true,
-                                                    bracketMatching: true,
-                                                    closeBrackets: true,
-                                                    autocompletion: true,
-                                                    highlightSelectionMatches: true,
-                                                    history: false,
-                                                }}
-                                                className="text-sm"
-                                            />
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                    <div className="min-w-0 flex-1">
+                        <h1 className="truncate font-semibold text-stone-50">{room.name}</h1>
+                        <span className="text-xs text-stone-400">
+                            {isSaving ? "Saving…" : "Saved"}
+                        </span>
+                    </div>
 
-                                <Card className="bg-black/20 backdrop-blur-sm border-gray-700/30">
-                                    <CardHeader className="pb-2">
-                                        <CardTitle className="text-white text-sm">Program Input (stdin)</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Textarea
-                                            value={stdin}
-                                            onChange={(e) => setStdin(e.target.value)}
-                                            className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 font-mono text-sm resize-none"
-                                            rows={4}
-                                            placeholder="Enter input for your program here..."
-                                        />
-                                    </CardContent>
-                                </Card>
-                            </div>
+                    <CollabPresence awareness={session.awareness} />
 
-                            <div className="space-y-4">
-                                {loading && (
-                                    <Card className="bg-yellow-500/10 backdrop-blur-sm border-yellow-500/30">
-                                        <CardContent className="p-4">
-                                            <div className="flex items-center gap-2">
-                                                <Loader className="w-4 h-4 animate-spin text-yellow-400" />
-                                                <span className="text-yellow-400 text-sm">Executing code...</span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )}
+                    <Button
+                        variant="outline"
+                        onClick={handleDownload}
+                        className="border-stone-100/15 bg-stone-100/5 text-stone-200 hover:bg-stone-100/10 hover:text-white"
+                    >
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">Download</span>
+                    </Button>
 
-                                {error && (
-                                    <Card className="bg-red-500/10 backdrop-blur-sm border-red-500/30">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-red-400 text-sm flex items-center gap-2">
-                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                                </svg>
-                                                Execution Error
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <pre className="text-red-300 text-xs font-mono whitespace-pre-wrap break-words">
-                                                {error}
-                                            </pre>
-                                        </CardContent>
-                                    </Card>
-                                )}
+                    <Button
+                        variant="outline"
+                        onClick={handleCopyRoomId}
+                        className="border-stone-100/15 bg-stone-100/5 text-stone-200 hover:bg-stone-100/10 hover:text-white"
+                    >
+                        <Copy className="h-4 w-4" />
+                        <span className="hidden sm:inline">Copy ID</span>
+                    </Button>
 
-                                {result && (
-                                    <>
-                                        <ExecutionStatus result={result} />
-
-                                        {result.stdout && (
-                                            <ProgramOutput result={result} />
-                                        )}
-
-                                        {result.stderr && (
-                                            <ErrorOutput result={result} />
-                                        )}
-
-                                        {result.compile_output && (
-                                            <CompilationOutput result={result} />
-                                        )}
-                                    </>
-                                )}
-
-                                {!result && !error && !loading && (
-                                    <GettingStarted />
-                                )}
-                            </div>
-                        </div>
-                    </main>
+                    <Button
+                        variant="destructive"
+                        onClick={() => router.push("/home")}
+                        className="bg-rose-600/90 text-white hover:bg-rose-500"
+                    >
+                        <LogOut className="h-4 w-4" />
+                        <span className="hidden sm:inline">Leave</span>
+                    </Button>
                 </div>
-            </SidebarProvider>
+            </header>
+
+            {/* Action bar — what will run, and the button that runs it */}
+            <div className="sticky top-16 z-30 border-b border-stone-100/10 bg-stone-950/80 backdrop-blur-xl">
+                <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2">
+                    <span className="rounded-full border border-stone-100/10 bg-stone-100/5 px-2.5 py-1 font-mono text-xs text-stone-300">
+                        {languageName}
+                    </span>
+
+                    <Button
+                        onClick={handleRun}
+                        disabled={loading}
+                        className="bg-gradient-to-r from-amber-400 to-orange-500 font-semibold text-stone-950 shadow-lg shadow-orange-500/25 hover:from-amber-300 hover:to-orange-400"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Running…
+                            </>
+                        ) : (
+                            <>
+                                <Play className="h-4 w-4" />
+                                Run
+                            </>
+                        )}
+                    </Button>
+                </div>
+            </div>
+
+            <main className="mx-auto grid max-w-7xl gap-5 px-4 py-6 lg:grid-cols-3">
+                <div className="space-y-5 lg:col-span-2">
+                    <div className="code-pane overflow-hidden rounded-2xl border border-stone-100/10 bg-stone-900/40">
+                        <CodeMirror
+                            height="clamp(320px, calc(100vh - 24rem), 760px)"
+                            theme={oneDark}
+                            extensions={extensions}
+                            aria-label="Collaborative code editor"
+                            basicSetup={{
+                                lineNumbers: true,
+                                foldGutter: true,
+                                dropCursor: true,
+                                allowMultipleSelections: true,
+                                indentOnInput: true,
+                                bracketMatching: true,
+                                closeBrackets: true,
+                                autocompletion: true,
+                                highlightSelectionMatches: true,
+                                history: false,
+                            }}
+                            className="text-[13px]"
+                        />
+                    </div>
+
+                    <div className="rounded-2xl border border-stone-100/10 bg-stone-900/40 p-4">
+                        <label
+                            htmlFor="stdin"
+                            className="mb-2 block text-sm font-semibold text-stone-100"
+                        >
+                            Program input{" "}
+                            <span className="font-normal text-stone-400">(stdin)</span>
+                        </label>
+                        <Textarea
+                            id="stdin"
+                            value={stdin}
+                            onChange={(e) => setStdin(e.target.value)}
+                            className="resize-none border-stone-100/10 bg-stone-900/60 font-mono text-[13px] text-stone-100 placeholder:text-stone-400 focus-visible:border-amber-400/50 focus-visible:ring-amber-400/20"
+                            rows={4}
+                            placeholder="Anything your program reads from input goes here"
+                        />
+                    </div>
+                </div>
+
+                <aside className="space-y-4">
+                    {error && (
+                        <OutputPanel title="Couldn't run your code" icon={AlertCircle} tone="danger">
+                            <p className="text-[13px] leading-relaxed text-rose-200">{error}</p>
+                        </OutputPanel>
+                    )}
+
+                    {result && (
+                        <>
+                            <ExecutionStatus result={result} />
+                            {result.stdout && <ProgramOutput result={result} />}
+                            {result.stderr && <ErrorOutput result={result} />}
+                            {result.compile_output && <CompilationOutput result={result} />}
+                        </>
+                    )}
+
+                    {!result && !error && !loading && <GettingStarted />}
+                </aside>
+            </main>
         </div>
     );
 };
