@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoomType {
+  CODE
+  DOC
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownedRooms  Room[] @relation("RoomAdmin")
+  joinedRooms Room[] @relation("RoomMember")
+
+  @@map("users")
+}
+
+model Room {
+  id          String   @id @default(uuid())
+  name        String
+  description String   @default("")
+  type        RoomType @default(CODE)
+  /// Judge0 language id — only meaningful for CODE rooms
+  language    Int?
+
+  admin        User    @relation("RoomAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  adminId      String
+  joinedUser   User?   @relation("RoomMember", fields: [joinedUserId], references: [id], onDelete: SetNull)
+  joinedUserId String?
+
+  /// Optimistic-concurrency counter for content saves. Bumped on every
+  /// accepted diff; clients send it back as baseVersion.
+  contentVersion Int     @default(0)
+  /// SHA-256 of the current content, for integrity checks on cold loads.
+  contentHash    String?
+  /// First ~500 chars of content, denormalized so the dashboard list
+  /// renders thumbnails without N S3 reads.
+  preview        String? @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([adminId])
+  @@index([joinedUserId])
+  @@map("rooms")
+}
