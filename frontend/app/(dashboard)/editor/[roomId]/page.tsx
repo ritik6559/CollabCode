@@ -23,7 +23,7 @@ import { ACTIONS } from "@/lib/utils";
 import { useCodeExecution } from "@/hooks/use-code-execution";
 import { EXTENSION_BY_LANGUAGE, LANGUAGES } from "@/data";
 import { downloadFile, safeFileName } from "@/lib/download";
-import { base64ToUint8, pickCollabColor, uint8ToBase64 } from "@/lib/collab";
+import { base64ToUint8, pickCollabColor } from "@/lib/collab";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ExecutionStatus from "@/features/editor/components/execution-status";
@@ -36,7 +36,7 @@ import CollabPresence from "@/components/collab-presence";
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 import { useGetRoomById } from "@/features/dashboard/api/use-get-room-by-id";
 import { useJoinRoom } from "@/features/dashboard/api/use-join-room";
-import useSaveCode from "@/features/dashboard/hooks/use-save-code";
+import { useContentSync } from "@/features/dashboard/hooks/use-content-sync";
 import { useSocket } from "@/context/SocketProvider";
 import { useCollabSession } from "@/hooks/use-collab-session";
 
@@ -64,7 +64,7 @@ const EditorPage = () => {
     const { data: room, isLoading: roomLoading, error: roomError } = useGetRoomById(roomId);
     const { mutateAsync: joinRoom } = useJoinRoom();
 
-    const { debouncedSave, isSaving } = useSaveCode(roomId);
+    const { initializeSync, scheduleSave, isSaving } = useContentSync(roomId);
 
     // CRDT session: Yjs doc + awareness relayed over the socket
     const collabUser = useMemo(
@@ -125,9 +125,16 @@ const EditorPage = () => {
         }
 
         setInitialDoc(ytext.toString());
-    }, [room, session, ytext]);
 
-    // Persist local edits: derived text for previews + the CRDT state
+        // Anchor the diff-sync base: first save diffs against exactly this
+        initializeSync({
+            text: ytext.toString(),
+            version: room.contentVersion ?? 0,
+            doc: session.doc,
+        });
+    }, [room, session, ytext, initializeSync]);
+
+    // Persist local edits: a text diff + the incremental CRDT delta
     useEffect(() => {
         if (!session || !ytext) {
             return;
@@ -136,7 +143,7 @@ const EditorPage = () => {
 
         const handleUpdate = (_update: Uint8Array, origin: unknown) => {
             if (origin !== "remote") {
-                debouncedSave(ytext.toString(), uint8ToBase64(Y.encodeStateAsUpdate(doc)));
+                scheduleSave(doc, ytext.toString());
             }
         };
 
@@ -144,7 +151,7 @@ const EditorPage = () => {
         return () => {
             doc.off("update", handleUpdate);
         };
-    }, [session, ytext, debouncedSave]);
+    }, [session, ytext, scheduleSave]);
 
     // Socket lifecycle: join the room, surface errors, clean up symmetrically
     const userEmail = user?.email;

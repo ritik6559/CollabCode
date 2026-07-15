@@ -22,6 +22,8 @@ export interface Room {
     code: string;
     /** Serialized Yjs document (base64) — present once a room has been edited with CRDT sync. */
     yjsState?: string;
+    /** Optimistic-concurrency counter for the diff-sync protocol. */
+    contentVersion?: number;
 }
 
 export const createRoomSchema = z.object({

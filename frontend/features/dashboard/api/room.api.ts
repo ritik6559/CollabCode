@@ -32,15 +32,24 @@ export const deleteRoom = async (roomId: string): Promise<{ roomId: string; name
     return res.data.data;
 };
 
-export const updateRoomCode = async ({
-    roomId,
-    code,
-    yjsState,
-}: {
+export interface SyncContentPayload {
     roomId: string;
-    code: string;
-    yjsState?: string;
-}): Promise<Room> => {
-    const res = await axiosClient.patch<ApiEnvelope<Room>>(`/room/${roomId}/update`, { code, yjsState });
+    /** The content version this save was computed against (optimistic lock). */
+    baseVersion: number;
+    /** Recovery / first-save path: the whole text. */
+    full?: string;
+    /** Normal path: a minimal single-region diff. */
+    splice?: { start: number; deleteCount: number; insert: string };
+    /** SHA-256 of the resulting text — the server refuses mismatches. */
+    contentHash: string;
+    /** Incremental Yjs update (base64) since the last acked save. */
+    yjsDelta?: string;
+}
+
+export const syncRoomContent = async ({
+    roomId,
+    ...body
+}: SyncContentPayload): Promise<{ version: number }> => {
+    const res = await axiosClient.patch<ApiEnvelope<{ version: number }>>(`/room/${roomId}/update`, body);
     return res.data.data;
 };

@@ -27,11 +27,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ACTIONS } from "@/lib/utils";
 import { downloadFile, safeFileName } from "@/lib/download";
-import { base64ToUint8, pickCollabColor, uint8ToBase64 } from "@/lib/collab";
+import { base64ToUint8, pickCollabColor } from "@/lib/collab";
 import { useGetCurrentUser } from "@/features/auth/api/use-get-current-user";
 import { useGetRoomById } from "@/features/dashboard/api/use-get-room-by-id";
 import { useJoinRoom } from "@/features/dashboard/api/use-join-room";
-import useSaveCode from "@/features/dashboard/hooks/use-save-code";
+import { useContentSync } from "@/features/dashboard/hooks/use-content-sync";
 import { useSocket } from "@/context/SocketProvider";
 import { useCollabSession } from "@/hooks/use-collab-session";
 import CollabPresence from "@/components/collab-presence";
@@ -52,7 +52,7 @@ const DocPage = () => {
     const { data: user, isLoading: userLoading, error: userError } = useGetCurrentUser();
     const { data: room, isLoading: roomLoading, error: roomError } = useGetRoomById(roomId);
     const { mutateAsync: joinRoom } = useJoinRoom();
-    const { debouncedSave, isSaving } = useSaveCode(roomId);
+    const { initializeSync, scheduleSave, isSaving } = useContentSync(roomId);
 
     // CRDT session: Yjs doc + awareness relayed over the socket
     const collabUser = useMemo(
@@ -82,10 +82,7 @@ const DocPage = () => {
                 // Only persist our own edits — remote changes are already
                 // saved by their author
                 if (session && !isChangeOrigin(transaction)) {
-                    debouncedSave(
-                        editor.getHTML(),
-                        uint8ToBase64(Y.encodeStateAsUpdate(session.doc))
-                    );
+                    scheduleSave(session.doc, editor.getHTML());
                 }
             },
             editorProps: {
@@ -129,7 +126,14 @@ const DocPage = () => {
             // Legacy room saved before CRDT sync existed — seed once
             editor.commands.setContent(room.code);
         }
-    }, [room, session, editor]);
+
+        // Anchor the diff-sync base: first save diffs against exactly this
+        initializeSync({
+            text: editor.getHTML(),
+            version: room.contentVersion ?? 0,
+            doc: session.doc,
+        });
+    }, [room, session, editor, initializeSync]);
 
     // Socket lifecycle — mirrors the code editor page
     const userEmail = user?.email;
