@@ -385,14 +385,16 @@
 .code-pane .cm-editor .cm-gutters {
   background: transparent;
   border-right: 1px solid rgba(250, 250, 249, 0.06);
-  color: #78716c;
+  /* The contrast floor: line numbers are read text ("look at line 12"),
+     so they hold 4.5:1 rather than the dimmer IDE convention. */
+  color: #a8a29e;
 }
 .code-pane .cm-editor .cm-activeLine {
   background: rgba(250, 250, 249, 0.03);
 }
 .code-pane .cm-editor .cm-activeLineGutter {
   background: rgba(250, 250, 249, 0.04);
-  color: #a8a29e;
+  color: #fafaf9;
 }
 .code-pane .cm-editor .cm-cursor,
 .code-pane .cm-editor .cm-dropCursor {

@@ -53,6 +53,10 @@ const EditorPage = () => {
     const [stdin, setStdin] = useState('');
     const [languageId, setLanguageId] = useState(28);
     const [isSocketReady, setIsSocketReady] = useState(false);
+    // CodeMirror's initial doc must already equal the Y.Text: y-codemirror's
+    // ySync only observes future changes, it never pushes existing content in.
+    // Captured once per session so later keystrokes can't reset the editor.
+    const [initialDoc, setInitialDoc] = useState<string | null>(null);
 
     const { submitAndPoll, result, error, loading } = useCodeExecution();
 
@@ -116,9 +120,11 @@ const EditorPage = () => {
             // Every client applies the same serialized state -> identical docs
             Y.applyUpdate(session.doc, base64ToUint8(room.yjsState), "remote");
         } else if (room.code) {
-            // Legacy room saved before CRDT sync existed — seed once
+            // Room saved before CRDT sync existed, or seeded by a file upload
             ytext.insert(0, room.code);
         }
+
+        setInitialDoc(ytext.toString());
     }, [room, session, ytext]);
 
     // Persist local edits: derived text for previews + the CRDT state
@@ -241,7 +247,7 @@ const EditorPage = () => {
         toast.success("Code downloaded");
     };
 
-    if (userLoading || roomLoading || !user || !room || !isSocketReady || !session) {
+    if (userLoading || roomLoading || !user || !room || !isSocketReady || !session || initialDoc === null) {
         return (
             <div className="lp-root flex min-h-screen items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
@@ -340,6 +346,7 @@ const EditorPage = () => {
                 <div className="space-y-5 lg:col-span-2">
                     <div className="code-pane overflow-hidden rounded-2xl border border-stone-100/10 bg-stone-900/40">
                         <CodeMirror
+                            value={initialDoc}
                             height="clamp(320px, calc(100vh - 24rem), 760px)"
                             theme={oneDark}
                             extensions={extensions}
