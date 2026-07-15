@@ -4,9 +4,10 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
-import { initDB } from "./db";
+import { initDB } from "./db/prisma";
 import { CLIENT_URL } from "./utils/config";
 import { errorHandler } from "./common/error.middleware";
+import { flushAllContent } from "./modules/storage/content-store";
 import authRoute from "./modules/auth/auth.routes";
 import { authenticateSocket } from "./modules/auth/auth.middleware";
 import roomRoute from "./modules/room/room.routes";
@@ -56,3 +57,19 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+// Debounced S3 writes must land before the process dies — the durability
+// window of the content store's write-back cache ends here.
+const shutdown = async (signal: string) => {
+    console.log(`${signal} received — flushing content to S3…`);
+    try {
+        await flushAllContent();
+    } catch (e) {
+        console.error("Flush on shutdown failed:", e);
+    } finally {
+        process.exit(0);
+    }
+};
+
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));

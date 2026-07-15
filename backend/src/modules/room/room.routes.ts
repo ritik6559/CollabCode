@@ -1,8 +1,8 @@
 import express from "express";
 import { validateToken } from "../auth/auth.middleware";
-import { validateObjectId } from "../../common/validate-object-id.middleware";
+import { validateUuid } from "../../common/validate-uuid.middleware";
 import { validateBody } from "../../common/validate.middleware";
-import { createRoomSchema, updateRoomCodeSchema } from "./room.schema";
+import { createRoomSchema, updateRoomContentSchema } from "./room.schema";
 import {
     createRoom,
     deleteRoom,
@@ -10,12 +10,12 @@ import {
     getUserRooms,
     joinRoom,
     leaveRoom,
-    updateRoomCode,
+    updateRoomContent,
 } from "./room.controller";
 
 const roomRouter = express.Router();
 
-const validateRoomId = validateObjectId("roomId");
+const validateRoomId = validateUuid("roomId");
 
 roomRouter.use(validateToken);
 
@@ -25,6 +25,6 @@ roomRouter.get("/:roomId", validateRoomId, getRoomById);
 roomRouter.delete("/:roomId", validateRoomId, deleteRoom);
 roomRouter.patch("/:roomId/join", validateRoomId, joinRoom);
 roomRouter.patch("/:roomId/leave", validateRoomId, leaveRoom);
-roomRouter.patch("/:roomId/update", validateRoomId, validateBody(updateRoomCodeSchema), updateRoomCode);
+roomRouter.patch("/:roomId/update", validateRoomId, validateBody(updateRoomContentSchema), updateRoomContent);
 
 export default roomRouter;

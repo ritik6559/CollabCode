@@ -31,13 +31,13 @@ export const leaveRoom = asyncHandler(async (req, res) => {
     });
 });
 
-export const updateRoomCode = asyncHandler(async (req, res) => {
-    const room = await roomService.updateRoomCode(req.params.roomId, req.body.code, req.body.yjsState);
+export const updateRoomContent = asyncHandler(async (req, res) => {
+    const result = await roomService.updateRoomContent(req.params.roomId, req.body);
 
     res.status(200).json({
         success: true,
-        message: "Room code updated successfully",
-        data: room,
+        message: "Room content saved",
+        data: result,
     });
 });
 

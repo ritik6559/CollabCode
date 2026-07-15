@@ -1,140 +1,242 @@
+import { Prisma, RoomType } from "@prisma/client";
+import { prisma } from "../../db/prisma";
 import { ApiError } from "../../common/api-error";
-import { Room } from "./room.model";
-import { CreateRoomInput } from "./room.schema";
+import {
+    applySave,
+    dropContent,
+    getContent,
+    seedContent,
+} from "../storage/content-store";
+import { sha256Hex } from "../storage/text-diff";
+import { CreateRoomInput, UpdateRoomContentInput } from "./room.schema";
 
-const USER_PUBLIC_FIELDS = "_id username email";
+const userSelect = { id: true, username: true, email: true } as const;
 
-export const createRoom = async (adminId: string, { name, description, type, language, code }: CreateRoomInput) => {
-    return Room.create({
-        name,
-        description: description ?? "",
-        type,
-        language,
-        code: code ?? "",
-        admin: adminId,
+const roomInclude = {
+    admin: { select: userSelect },
+    joinedUser: { select: userSelect },
+} as const;
+
+type RoomWithUsers = Prisma.RoomGetPayload<{ include: typeof roomInclude }>;
+type PublicUser = { id: string; username: string; email: string };
+
+/**
+ * Serializers keep the wire format the frontend already speaks (`_id`,
+ * populated user objects, lowercase room type) so the Mongo -> Postgres
+ * migration is invisible to API consumers.
+ */
+const toPublicUser = (user: PublicUser) => ({
+    _id: user.id,
+    username: user.username,
+    email: user.email,
+});
+
+const serializeRoom = (
+    room: RoomWithUsers,
+    content?: { text: string; yjsBase64: string | null; version: number }
+) => ({
+    _id: room.id,
+    name: room.name,
+    description: room.description,
+    type: room.type === RoomType.DOC ? "doc" : "code",
+    language: room.language ?? undefined,
+    admin: toPublicUser(room.admin),
+    joinedUser: room.joinedUser ? toPublicUser(room.joinedUser) : undefined,
+    // Lists carry the denormalized preview; the detail view carries the
+    // real content streamed out of the content store (cache -> S3).
+    code: content ? content.text : room.preview ?? "",
+    yjsState: content?.yjsBase64 ?? undefined,
+    contentVersion: content ? content.version : room.contentVersion,
+    createdAt: room.createdAt,
+    updatedAt: room.updatedAt,
+});
+
+export const createRoom = async (
+    adminId: string,
+    { name, description, type, language, code }: CreateRoomInput
+) => {
+    const room = await prisma.room.create({
+        data: {
+            name,
+            description: description ?? "",
+            type: type === "doc" ? RoomType.DOC : RoomType.CODE,
+            language,
+            adminId,
+            ...(code
+                ? {
+                      contentVersion: 1,
+                      contentHash: sha256Hex(code),
+                      preview: code.slice(0, 500),
+                  }
+                : {}),
+        },
+        include: roomInclude,
     });
+
+    if (code) {
+        seedContent(room.id, code);
+    }
+
+    return serializeRoom(room);
 };
 
 export const joinRoom = async (roomId: string, userId: string) => {
-    const room = await Room.findById(roomId);
+    const room = await prisma.room.findUnique({
+        where: { id: roomId },
+        include: roomInclude,
+    });
 
     if (!room) {
         throw new ApiError(404, "Room not found");
     }
 
-    if (room.admin.toString() === userId) {
-        return { room, message: "You are the admin" };
+    if (room.adminId === userId) {
+        return { room: serializeRoom(room), message: "You are the admin" };
     }
 
-    if (room.joinedUser?.toString() === userId) {
-        return { room, message: "You are already in this room" };
+    if (room.joinedUserId === userId) {
+        return { room: serializeRoom(room), message: "You are already in this room" };
     }
 
-    if (room.joinedUser) {
+    if (room.joinedUserId) {
         throw new ApiError(400, "Room is full. Only 2 users allowed (admin + 1 member)");
     }
 
-    const updatedRoom = await Room.findByIdAndUpdate(
-        roomId,
-        { joinedUser: userId },
-        { new: true }
-    ).populate("admin", USER_PUBLIC_FIELDS)
-     .populate("joinedUser", USER_PUBLIC_FIELDS);
+    // Conditional update: the WHERE clause re-checks the seat is still empty,
+    // so two concurrent joins can't both win (no read-then-write race).
+    const claimed = await prisma.room.updateMany({
+        where: { id: roomId, joinedUserId: null },
+        data: { joinedUserId: userId },
+    });
 
-    return { room: updatedRoom, message: "Successfully joined the room" };
+    if (claimed.count === 0) {
+        throw new ApiError(400, "Room is full. Only 2 users allowed (admin + 1 member)");
+    }
+
+    const updated = await prisma.room.findUniqueOrThrow({
+        where: { id: roomId },
+        include: roomInclude,
+    });
+
+    return { room: serializeRoom(updated), message: "Successfully joined the room" };
 };
 
 export const leaveRoom = async (roomId: string, userId: string) => {
-    const room = await Room.findById(roomId);
+    const room = await prisma.room.findUnique({ where: { id: roomId } });
 
     if (!room) {
         throw new ApiError(404, "Room not found");
     }
 
-    const isAdmin = userId === room.admin._id.toString();
-    const isJoinedUser = userId === room.joinedUser?._id.toString();
+    const isAdmin = room.adminId === userId;
+    const isJoinedUser = room.joinedUserId === userId;
 
     if (!isAdmin && !isJoinedUser) {
         throw new ApiError(403, "Not authorized to leave this room");
     }
 
     let message: string;
+    let data: Prisma.RoomUpdateInput;
 
     if (isAdmin) {
-        if (!room.joinedUser) {
+        if (!room.joinedUserId) {
             throw new ApiError(400, "Can't leave an empty room.");
         }
 
-        room.admin = room.joinedUser;
-        room.joinedUser = null;
+        data = {
+            admin: { connect: { id: room.joinedUserId } },
+            joinedUser: { disconnect: true },
+        };
         message = "Left room and transferred admin rights to the other user";
     } else {
-        room.joinedUser = null;
+        data = { joinedUser: { disconnect: true } };
         message = "Left room successfully";
     }
 
-    await room.save();
+    const updated = await prisma.room.update({
+        where: { id: roomId },
+        data,
+        include: roomInclude,
+    });
 
-    return { room, message };
+    return { room: serializeRoom(updated), message };
 };
 
-export const updateRoomCode = async (roomId: string, code: string, yjsState?: string) => {
-    const update: Record<string, string> = { code };
-    if (yjsState !== undefined) {
-        update.yjsState = yjsState;
-    }
-
-    const room = await Room.findByIdAndUpdate(
-        roomId,
-        update,
-        { new: true }
-    ).populate("admin", USER_PUBLIC_FIELDS)
-     .populate("joinedUser", USER_PUBLIC_FIELDS);
+export const updateRoomContent = async (roomId: string, input: UpdateRoomContentInput) => {
+    const room = await prisma.room.findUnique({
+        where: { id: roomId },
+        select: { id: true, contentVersion: true },
+    });
 
     if (!room) {
         throw new ApiError(404, "Room not found");
     }
 
-    return room;
+    const saved = await applySave(roomId, room.contentVersion, {
+        baseVersion: input.baseVersion,
+        full: input.full,
+        splice: input.splice,
+        contentHash: input.contentHash,
+        yjsDelta: input.yjsDelta ? Buffer.from(input.yjsDelta, "base64") : undefined,
+    });
+
+    // Postgres is the version authority and gets updated synchronously;
+    // the heavy S3 write is debounced inside the content store.
+    await prisma.room.update({
+        where: { id: roomId },
+        data: {
+            contentVersion: saved.version,
+            contentHash: saved.contentHash,
+            preview: saved.preview,
+        },
+    });
+
+    return { version: saved.version };
 };
 
 export const getUserRooms = async (userId: string) => {
-    return Room.find({
-        $or: [
-            { admin: userId },
-            { joinedUser: userId }
-        ]
-    }).populate("admin", USER_PUBLIC_FIELDS)
-      .populate("joinedUser", USER_PUBLIC_FIELDS);
+    const rooms = await prisma.room.findMany({
+        where: {
+            OR: [{ adminId: userId }, { joinedUserId: userId }],
+        },
+        include: roomInclude,
+        orderBy: { updatedAt: "desc" },
+    });
+
+    return rooms.map((room) => serializeRoom(room));
 };
 
 export const getRoomById = async (roomId: string) => {
-    const room = await Room.findById(roomId)
-        .populate("admin", USER_PUBLIC_FIELDS)
-        .populate("joinedUser", USER_PUBLIC_FIELDS);
+    const room = await prisma.room.findUnique({
+        where: { id: roomId },
+        include: roomInclude,
+    });
 
     if (!room) {
         throw new ApiError(404, "Room not found");
     }
 
-    return room;
+    const content = await getContent(room.id, room.contentVersion);
+
+    return serializeRoom(room, content);
 };
 
 export const deleteRoom = async (roomId: string, userId: string) => {
-    const room = await Room.findById(roomId);
+    const room = await prisma.room.findUnique({ where: { id: roomId } });
 
     if (!room) {
         throw new ApiError(404, "Room not found");
     }
 
-    if (room.admin.toString() !== userId) {
+    if (room.adminId !== userId) {
         throw new ApiError(403, "Only room admins can delete the room");
     }
 
-    await room.deleteOne();
+    await prisma.room.delete({ where: { id: roomId } });
+    await dropContent(roomId);
 
     return {
-        roomId: room._id,
+        roomId: room.id,
         name: room.name,
     };
 };

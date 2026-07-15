@@ -1,10 +1,11 @@
 import { RequestHandler } from "express";
-import mongoose from "mongoose";
 import { ApiError } from "./api-error";
 
-export const validateObjectId = (paramName: string): RequestHandler =>
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const validateUuid = (paramName: string): RequestHandler =>
     (req, _res, next) => {
-        if (!mongoose.Types.ObjectId.isValid(req.params[paramName])) {
+        if (!UUID_RE.test(req.params[paramName])) {
             next(new ApiError(400, `Invalid ${paramName} format`));
             return;
         }

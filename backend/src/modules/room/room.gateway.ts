@@ -1,8 +1,9 @@
 import { Server, Socket } from "socket.io";
-import mongoose from "mongoose";
 import { ACTIONS } from "./room.events";
-import { Room } from "./room.model";
-import { MAX_CONTENT_LENGTH } from "./room.schema";
+import { prisma } from "../../db/prisma";
+import { MAX_CONTENT_LENGTH } from "../storage/content-store";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface RoomJoinPayload {
     email: string;
@@ -26,12 +27,15 @@ export const registerRoomHandlers = (io: Server, socket: Socket) => {
             const roomId = payload?.room;
             const username = typeof payload?.username === "string" ? payload.username : "Anonymous";
 
-            if (typeof roomId !== "string" || !mongoose.Types.ObjectId.isValid(roomId)) {
+            if (typeof roomId !== "string" || !UUID_RE.test(roomId)) {
                 emitRoomError(socket, "Invalid room id");
                 return;
             }
 
-            const room = await Room.findById(roomId);
+            const room = await prisma.room.findUnique({
+                where: { id: roomId },
+                select: { adminId: true, joinedUserId: true },
+            });
 
             if (!room) {
                 emitRoomError(socket, "Room not found");
@@ -41,8 +45,8 @@ export const registerRoomHandlers = (io: Server, socket: Socket) => {
             // Only the admin or the joined member may enter the socket room
             const userId = socket.data.userId as string;
             const isMember =
-                room.admin.toString() === userId ||
-                room.joinedUser?.toString() === userId;
+                room.adminId === userId ||
+                room.joinedUserId === userId;
 
             if (!isMember) {
                 emitRoomError(socket, "You are not a member of this room");
